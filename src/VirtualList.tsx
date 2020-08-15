@@ -1,4 +1,4 @@
-import React, { UIEvent, useCallback, useRef } from "react";
+import React, { UIEvent } from "react";
 import throttle from "lodash-es/throttle";
 import Measure, { ContentRect } from "react-measure";
 import debounce from "lodash-es/debounce";
@@ -13,55 +13,6 @@ function getFirstIndexDiffer(arr1: object[], arr2: object[]) {
   return arr1.length;
 }
 
-interface RealListProps {
-  containerWidth: number;
-  containerHeight: number;
-  totalHeight: number;
-  onScroll: (scrollTop: number) => void;
-}
-
-const RealList: React.FC<RealListProps> = ({
-  containerWidth,
-  containerHeight,
-  totalHeight,
-  onScroll,
-  children,
-}) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const onScrollThrottled = useCallback(throttle(onScroll, 100), [onScroll]);
-  const onScrollHandler = useCallback(
-    (event: UIEvent) => {
-      onScrollThrottled(event.currentTarget.scrollTop);
-    },
-    [onScrollThrottled]
-  );
-
-  return (
-    <div
-      style={{
-        width: containerWidth,
-        height: containerHeight,
-        position: "relative",
-        overflow: "auto",
-        WebkitOverflowScrolling: "touch",
-        willChange: "transform",
-      }}
-      onScroll={onScrollHandler}
-      ref={containerRef}
-    >
-      <div
-        style={{
-          height: totalHeight,
-          width: "100%",
-          position: "relative",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-};
-
 interface VirtualListProps<Item extends Object> {
   items: Item[];
   height: number;
@@ -69,7 +20,6 @@ interface VirtualListProps<Item extends Object> {
   getItemKey: (item: Item) => string;
   estimatedItemHeight: number;
   renderRow: (renderRowProps: RenderRowProps<Item>) => React.ReactNode;
-  overscanCount: number;
   overscanFactor: number;
 }
 
@@ -96,7 +46,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   VirtualListState<Item>
 > {
   static defaultProps = {
-    overscanCount: 1,
     estimatedItemHeight: DEFAULT_ESTIMATED_HEIGHT,
     overscanFactor: DEFAULT_OVERSCAN_FACTOR,
   };
@@ -110,6 +59,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     Item,
     ItemMetadata
   >();
+  innerContainerRef = React.createRef<HTMLDivElement>();
+  outerContainerRef = React.createRef<HTMLDivElement>();
 
   setItemMetadata = (item: Item, newMeta: Partial<ItemMetadata>) => {
     const { estimatedItemHeight } = this.props;
@@ -141,14 +92,21 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return this.itemToMetadata.get(item)!;
   };
 
-  buildOffsetsForCurrentViewAndSetLastPositionedItemIndex = (
+  /**
+   * Build offsets for current view or needed index
+   */
+  buildOffsets = (
     props: VirtualListProps<Item>,
-    state: VirtualListState<Item>
+    state: VirtualListState<Item>,
+    indexNeeded: number | null = null
   ) => {
-    const { items, height, overscanCount, overscanFactor } = props;
+    const { items, height, overscanFactor } = props;
     const { offset } = state;
 
-    if (this.lastPositionedIndex >= items.length - 1) {
+    if (
+      this.lastPositionedIndex >= items.length - 1 ||
+      (indexNeeded !== null && this.lastPositionedIndex >= indexNeeded)
+    ) {
       return;
     }
 
@@ -156,8 +114,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const lastPositionedItemMetadata = this.getItemMetadata(lastPositionedItem);
     const targetOffset = offset + height * overscanFactor;
 
-    // TODO: count overscanCount
-    if (lastPositionedItemMetadata.offset > targetOffset) {
+    if (
+      lastPositionedItemMetadata.offset > targetOffset &&
+      indexNeeded === null
+    ) {
       return;
     }
 
@@ -166,20 +126,23 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     let curOffset = startItemMetadata.offset + startItemMetadata.height;
     let stopIndex = startIndex;
-    let overscannedItems = 0;
 
     while (
-      (curOffset < targetOffset || overscannedItems < overscanCount) &&
+      (curOffset < targetOffset ||
+        (indexNeeded !== null && stopIndex < indexNeeded)) &&
       stopIndex < items.length - 1
     ) {
-      if (curOffset >= targetOffset) {
-        overscannedItems++;
-      }
-
       stopIndex++;
       const curItem = items[stopIndex];
       this.setItemMetadata(curItem, { offset: curOffset });
       curOffset += this.getItemMetadata(curItem).height;
+    }
+
+    // overscan +1 item for a11y
+    if (stopIndex < items.length - 1) {
+      stopIndex++;
+      const curItem = items[stopIndex];
+      this.setItemMetadata(curItem, { offset: curOffset });
     }
 
     console.log("built offsets", {
@@ -190,11 +153,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.lastPositionedIndex = stopIndex;
   };
 
-  // TODO: realScrollTop to ref
-  onScroll = (realScrollTop: number) => {
+  onScrollThrottled = throttle((scrollTop: number) => {
     this.setState({
-      offset: realScrollTop,
+      offset: scrollTop,
     });
+  }, 100);
+
+  onScroll = (event: UIEvent) => {
+    this.onScrollThrottled(event.currentTarget.scrollTop);
   };
 
   // TODO: lower and upper bound?
@@ -224,10 +190,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   getStartIndex = () => {
     const { offset } = this.state;
 
-    this.buildOffsetsForCurrentViewAndSetLastPositionedItemIndex(
-      this.props,
-      this.state
-    );
+    this.buildOffsets(this.props, this.state);
 
     return this.findNearestItemBinarySearch(
       0,
@@ -238,12 +201,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
   // TODO: binary search too and offsets ahead instead of simple overscan
   getStopIndex = (startIndex: number) => {
-    const { items, height } = this.props;
+    const { items, height, overscanFactor } = this.props;
     const { offset } = this.state;
 
     const startItem = items[startIndex];
     const itemMetadata = this.getItemMetadata(startItem);
-    const maxOffset = offset + height;
+    const maxOffset = offset + height * overscanFactor;
 
     let curOffset = itemMetadata.offset + itemMetadata.height;
     let stopIndex = startIndex;
@@ -257,7 +220,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   getStartAndStopIndex = () => {
-    const { items, overscanCount } = this.props;
+    const { items } = this.props;
 
     if (items.length === 0) {
       return [0, -1, 0, -1];
@@ -266,10 +229,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const startIndex = this.getStartIndex();
     const stopIndex = this.getStopIndex(startIndex);
 
-    // TODO: overscan with scroll direction
     return [
-      Math.max(0, startIndex - overscanCount),
-      Math.max(0, Math.min(items.length - 1, stopIndex + overscanCount)),
+      Math.max(0, startIndex - 1), // for a11y
+      Math.max(0, Math.min(items.length - 1, stopIndex + 1)), // for a11y
       startIndex,
       stopIndex,
     ];
@@ -338,6 +300,33 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     );
   };
 
+  scrollToIndex = (index: number) => {
+    const { items } = this.props;
+
+    // TODO: magic with learn js heights and only 1 focusing items
+    // TODO: smart stop
+
+    setTimeout(() => {
+      if (this.innerContainerRef.current && this.outerContainerRef.current) {
+        this.buildOffsets(this.props, this.state, index);
+        const { offset } = this.getItemMetadata(items[index]);
+        this.innerContainerRef.current.style.height = `${this.getEstimatedTotalHeight()}px`;
+        this.outerContainerRef.current.scrollTop = offset;
+
+        if (this.outerContainerRef.current.scrollTop !== offset) {
+          this.scrollToIndex(index);
+        }
+
+        console.log(
+          "mega",
+          this.innerContainerRef.current.style.height,
+          offset,
+          this.outerContainerRef.current.scrollTop
+        );
+      }
+    }, 0);
+  };
+
   render() {
     const { items, height, width, renderRow, getItemKey } = this.props;
 
@@ -375,14 +364,29 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
 
     return (
-      <RealList
-        containerHeight={height}
-        containerWidth={width}
-        totalHeight={estimatedTotalHeight}
+      <div
+        style={{
+          width,
+          height,
+          position: "relative",
+          overflow: "auto",
+          WebkitOverflowScrolling: "touch",
+          willChange: "transform",
+        }}
         onScroll={this.onScroll}
+        ref={this.outerContainerRef}
       >
-        {itemsToRender}
-      </RealList>
+        <div
+          style={{
+            height: estimatedTotalHeight,
+            width: "100%",
+            position: "relative",
+          }}
+          ref={this.innerContainerRef}
+        >
+          {itemsToRender}
+        </div>
+      </div>
     );
   }
 }

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import faker from "faker";
 import AutoSizer from "react-virtualized-auto-sizer";
 import "./App.css";
@@ -19,6 +19,7 @@ const getMessages = () => {
 };
 
 function App() {
+  const virtualListRef = useRef<VirtualList<MessageProps>>(null);
   const getItemKey = useCallback(({ id }) => id, []);
   const [messages, setMessages] = useState(() => {
     return getMessages();
@@ -26,9 +27,16 @@ function App() {
 
   useEffect(() => {
     setTimeout(() => {
-      setMessages([...messages, ...getMessages()]);
-    }, 5 * 1000);
+      const newMessages = [...messages, ...getMessages()];
+      setMessages(newMessages);
+    }, 10 * 1000);
   }, [setMessages, messages]);
+
+  useEffect(() => {
+    if (virtualListRef.current) {
+      virtualListRef.current.scrollToIndex(messages.length - 1);
+    }
+  }, [virtualListRef, messages]);
 
   return (
     <div className="app">
@@ -36,7 +44,8 @@ function App() {
         <AutoSizer>
           {({ height, width }) => (
             <VirtualList<MessageProps>
-              items={[]}
+              ref={virtualListRef}
+              items={messages}
               getItemKey={getItemKey}
               width={width}
               height={height}
