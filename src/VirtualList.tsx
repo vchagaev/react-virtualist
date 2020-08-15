@@ -3,10 +3,6 @@ import throttle from "lodash-es/throttle";
 import Measure, { ContentRect } from "react-measure";
 import debounce from "lodash-es/debounce";
 
-// TODO: bigger list
-// TODO: check resizes
-// TODO: reverse list support?
-
 function getFirstIndexDiffer(arr1: object[], arr2: object[]) {
   for (let i = 0; i < arr1.length; i++) {
     if (arr1[i] !== arr2[i]) {
@@ -66,7 +62,6 @@ const RealList: React.FC<RealListProps> = ({
   );
 };
 
-
 interface VirtualListProps<Item extends Object> {
   items: Item[];
   height: number;
@@ -74,7 +69,6 @@ interface VirtualListProps<Item extends Object> {
   getItemKey: (item: Item) => string;
   estimatedItemHeight: number;
   renderRow: (renderRowProps: RenderRowProps<Item>) => React.ReactNode;
-  isReversedList?: boolean;
   overscanCount: number;
   overscanFactor: number;
 }
@@ -91,6 +85,7 @@ interface RenderRowProps<Item> {
 type ItemMetadata = {
   height: number;
   offset: number;
+  measured: boolean;
 };
 
 const DEFAULT_ESTIMATED_HEIGHT = 50;
@@ -119,17 +114,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   setItemMetadata = (item: Item, newMeta: Partial<ItemMetadata>) => {
     const { estimatedItemHeight } = this.props;
 
-    // TODO: remove debugger
-    if (!item) {
-      debugger;
-    }
-
     if (!this.itemToMetadata.has(item)) {
-      console.error("cache miss set");
-
       this.itemToMetadata.set(item, {
         height: estimatedItemHeight,
         offset: 0,
+        measured: false,
       });
     }
 
@@ -141,21 +130,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   getItemMetadata = (item: Item) => {
     const { estimatedItemHeight } = this.props;
 
-    // TODO: remove debugger
-    if (!item) {
-      debugger;
-    }
-
     if (!this.itemToMetadata.has(item)) {
-      console.error("cache miss get");
-
       this.itemToMetadata.set(item, {
         height: estimatedItemHeight,
         offset: 0,
+        measured: false,
       });
     }
-
-    console.log("getItemMetadata", this.itemToMetadata.get(item));
 
     return this.itemToMetadata.get(item)!;
   };
@@ -278,6 +259,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   getStartAndStopIndex = () => {
     const { items, overscanCount } = this.props;
 
+    if (items.length === 0) {
+      return [0, -1, 0, -1];
+    }
+
     const startIndex = this.getStartIndex();
     const stopIndex = this.getStopIndex(startIndex);
 
@@ -299,8 +284,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { items: prevItems } = prevProps;
 
     if (items !== prevItems) {
-      this.lastPositionedIndex = Math.max(
-        0,
+      this.lastPositionedIndex = Math.min(
+        this.lastPositionedIndex,
         getFirstIndexDiffer(items, prevItems) - 1
       );
 
@@ -325,7 +310,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       return;
     }
 
-    this.setItemMetadata(item, { height: newHeight });
+    this.setItemMetadata(item, { height: newHeight, measured: true });
 
     this.lastPositionedIndex = Math.min(
       this.lastPositionedIndex,
@@ -335,9 +320,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.forceUpdateDebounced();
   };
 
-  // TODO: handle [] items
   getEstimatedTotalHeight = () => {
     const { items, estimatedItemHeight } = this.props;
+
+    if (items.length === 0) {
+      return 0;
+    }
 
     const lastPositionedItemMetadata = this.getItemMetadata(
       items[this.lastPositionedIndex]
@@ -361,7 +349,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const itemsToRender: React.ReactNode[] = [];
     for (let i = startIndex; i <= stopIndex; i++) {
       const item = items[i];
-      const { offset, height } = this.getItemMetadata(item);
+      const { offset, height, measured } = this.getItemMetadata(item);
 
       itemsToRender.push(
         <Measure key={getItemKey(item)} offset onResize={this.onResize(i)}>
@@ -372,8 +360,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
                 position: "absolute",
                 top: offset,
                 height,
-                // TODO: handle before positioning
-                // opacity: typeof top === 'number' && typeof height === 'number' ? 1 : 0, // to hide flashing
+                opacity: measured ? 1 : 0,
                 width: "100%",
               }}
             >
