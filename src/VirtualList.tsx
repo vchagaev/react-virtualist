@@ -70,6 +70,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   innerContainerRef = React.createRef<HTMLDivElement>();
   outerContainerRef = React.createRef<HTMLDivElement>();
   indexToFocus: number | null = null;
+  scrollTopDelta: number = 0;
 
   setItemMetadata = (item: Item, newMeta: Partial<ItemMetadata>) => {
     const { estimatedItemHeight } = this.props;
@@ -122,6 +123,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const lastPositionedItem = items[this.lastPositionedIndex];
     const lastPositionedItemMetadata = this.getItemMetadata(lastPositionedItem);
     const targetOffset = offset + height * overscanFactor;
+
+    // TODO: delta count here
 
     if (
       lastPositionedItemMetadata.offset > targetOffset &&
@@ -257,7 +260,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     if (items !== prevItems) {
       this.lastPositionedIndex = Math.min(
         this.lastPositionedIndex,
-        getFirstIndexDiffer(items, prevItems) - 1
+        Math.max(0, getFirstIndexDiffer(items, prevItems) - 1)
       );
 
       this.forceUpdate();
@@ -265,12 +268,19 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   }
 
   forceUpdateDebounced = debounce(() => {
-    this.forceUpdate();
+    const delta = this.scrollTopDelta;
+    this.scrollTopDelta = 0;
+
+    this.forceUpdate(() => {
+      if (this.outerContainerRef.current) {
+        this.outerContainerRef.current.scrollTop += delta;
+      }
+    });
   }, 1);
 
-  // TODO: check out of order and inconsistency between state items and index
   onResize = (index: number) => (contentRect: ContentRect) => {
     const { items } = this.props;
+    const { offset } = this.state;
 
     const item = items[index];
     const metadata = this.getItemMetadata(item);
@@ -287,6 +297,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       this.lastPositionedIndex,
       Math.max(0, index - 1)
     );
+
+    if (metadata.offset < offset) {
+      this.scrollTopDelta += newHeight - oldHeight;
+    }
 
     this.forceUpdateDebounced();
   };
@@ -308,6 +322,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       (items.length - 1 - this.lastPositionedIndex) * estimatedItemHeight
     );
   };
+
+  forceUpdateAwait = () => new Promise((resolve) => {
+    this.forceUpdate(resolve);
+  });
 
   scrollToIndex = async (index: number, retries = 3): Promise<number> => {
     const { items, height } = this.props;
@@ -333,7 +351,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const newOffset = Math.min(maxPossibleOffset, offset);
     this.outerContainerRef.current.scrollTop = newOffset;
 
-    await wait(100); // to layout current elements
+    await this.forceUpdateAwait(); // wait for new layout and getitem metadata
 
     const { offset: offsetAfterMeasures } = this.getItemMetadata(items[index]);
 

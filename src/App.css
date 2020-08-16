@@ -7,14 +7,23 @@ body {
 }
 
 .app {
-  padding: 40px 80px 50px;
+  padding: 20px 30px;
   height: 100%;
 }
 
 .chat-container {
+  display: flex;
   overflow: auto;
   height: 100%;
-  overflow-anchor: none;
+}
+
+.chat-settings {
+  flex-grow: 0;
+  width: 200px;
+}
+
+.chat-messages {
+  flex-grow: 1;
 }
 
 ::-webkit-scrollbar {
