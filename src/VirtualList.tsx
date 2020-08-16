@@ -3,6 +3,14 @@ import throttle from "lodash-es/throttle";
 import Measure, { ContentRect } from "react-measure";
 import debounce from "lodash-es/debounce";
 
+// TODO: overscan factor for both directions
+// TODO: check overscans
+
+const wait = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(() => resolve(), ms);
+  });
+
 function getFirstIndexDiffer(arr1: object[], arr2: object[]) {
   for (let i = 0; i < arr1.length; i++) {
     if (arr1[i] !== arr2[i]) {
@@ -61,6 +69,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   >();
   innerContainerRef = React.createRef<HTMLDivElement>();
   outerContainerRef = React.createRef<HTMLDivElement>();
+  indexToFocus: number | null = null;
 
   setItemMetadata = (item: Item, newMeta: Partial<ItemMetadata>) => {
     const { estimatedItemHeight } = this.props;
@@ -97,11 +106,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
    */
   buildOffsets = (
     props: VirtualListProps<Item>,
-    state: VirtualListState<Item>,
-    indexNeeded: number | null = null
+    state: VirtualListState<Item>
   ) => {
     const { items, height, overscanFactor } = props;
     const { offset } = state;
+    const indexNeeded = this.indexToFocus;
 
     if (
       this.lastPositionedIndex >= items.length - 1 ||
@@ -300,31 +309,40 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     );
   };
 
-  scrollToIndex = (index: number) => {
-    const { items } = this.props;
+  scrollToIndex = async (index: number, retries = 3): Promise<number> => {
+    const { items, height } = this.props;
 
-    // TODO: magic with learn js heights and only 1 focusing items
-    // TODO: smart stop
+    if (this.indexToFocus !== null && this.indexToFocus !== index) {
+      throw new Error(
+        `Already scrolling to index: ${this.indexToFocus}, but got index: ${index}`
+      );
+    }
 
-    setTimeout(() => {
-      if (this.innerContainerRef.current && this.outerContainerRef.current) {
-        this.buildOffsets(this.props, this.state, index);
-        const { offset } = this.getItemMetadata(items[index]);
-        this.innerContainerRef.current.style.height = `${this.getEstimatedTotalHeight()}px`;
-        this.outerContainerRef.current.scrollTop = offset;
+    if (!this.innerContainerRef.current || !this.outerContainerRef.current) {
+      this.indexToFocus = null;
+      throw new Error("Containers are not initialized yet");
+    }
 
-        if (this.outerContainerRef.current.scrollTop !== offset) {
-          this.scrollToIndex(index);
-        }
+    this.indexToFocus = index;
 
-        console.log(
-          "mega",
-          this.innerContainerRef.current.style.height,
-          offset,
-          this.outerContainerRef.current.scrollTop
-        );
-      }
-    }, 0);
+    this.buildOffsets(this.props, this.state);
+    const { offset } = this.getItemMetadata(items[index]);
+    const newContainerHeight = this.getEstimatedTotalHeight();
+    this.innerContainerRef.current.style.height = `${newContainerHeight}px`;
+    const maxPossibleOffset = newContainerHeight - height;
+    const newOffset = Math.min(maxPossibleOffset, offset);
+    this.outerContainerRef.current.scrollTop = newOffset;
+
+    await wait(100); // to layout current elements
+
+    const { offset: offsetAfterMeasures } = this.getItemMetadata(items[index]);
+
+    if (offsetAfterMeasures !== newOffset && retries > 0) {
+      return this.scrollToIndex(index, retries - 1);
+    }
+
+    this.indexToFocus = null;
+    return this.outerContainerRef.current.scrollTop;
   };
 
   render() {

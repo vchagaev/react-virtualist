@@ -8,7 +8,7 @@ import { VirtualList } from "./VirtualList";
 import { Message, MessageProps } from "./Message";
 
 const getMessages = () => {
-  return new Array(10).fill(null).map((_, index) => ({
+  return new Array(100).fill(null).map((_, index) => ({
     index,
     id: faker.random.uuid(),
     fullName: faker.name.findName(),
@@ -34,7 +34,7 @@ function App() {
 
   useEffect(() => {
     if (virtualListRef.current) {
-      virtualListRef.current.scrollToIndex(messages.length - 1);
+      virtualListRef.current.scrollToIndex(messages.length - 5);
     }
   }, [virtualListRef, messages]);
 
