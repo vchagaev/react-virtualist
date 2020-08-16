@@ -3,8 +3,6 @@
   <component name="ChangeListManager">
     <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.css" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -78,7 +76,7 @@
       <option name="presentableId" value="Default" />
       <updated>1597516730895</updated>
       <workItem from="1597516737434" duration="8447000" />
-      <workItem from="1597591019301" duration="8657000" />
+      <workItem from="1597591019301" duration="20158000" />
     </task>
     <task id="LOCAL-00003" summary="VIrtualList tweaks">
       <created>1597518670789</created>
@@ -101,7 +99,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597593949218</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="panel, fix scroll up, scroll to item stable">
+      <created>1597605339252</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1597605339252</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -125,17 +130,22 @@
     <MESSAGE value="VIrtualList core" />
     <MESSAGE value="VIrtualList tweaks" />
     <MESSAGE value="VIrtualList scrollTo start" />
-    <option name="LAST_COMMIT_MESSAGE" value="VIrtualList scrollTo start" />
+    <MESSAGE value="panel, fix scroll up, scroll to item stable" />
+    <option name="LAST_COMMIT_MESSAGE" value="panel, fix scroll up, scroll to item stable" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597605302087">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597605338970">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597605302087" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597605318823">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597605338970" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597618598076">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597605318823" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597618598076" />
+    <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597605609551">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="501" y="94" key="RollbackChangesDialog/0.23.1440.877@0.23.1440.877" timestamp="1597605609551" />
     <state x="221" y="100" key="SettingsEditor" timestamp="1597405945616">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
@@ -144,9 +154,9 @@
       <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state x="320" y="197" key="Vcs.Push.Dialog.v2/0.23.1440.877@0.23.1440.877" timestamp="1597518674406" />
-    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup" timestamp="1597503375068">
+    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup" timestamp="1597608372558">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup/0.23.1440.877@0.23.1440.877" timestamp="1597503375068" />
+    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup/0.23.1440.877@0.23.1440.877" timestamp="1597608372558" />
   </component>
 </project>
