@@ -3,15 +3,16 @@ import throttle from "lodash-es/throttle";
 import Measure, { ContentRect } from "react-measure";
 import debounce from "lodash-es/debounce";
 
-// TODO: avoid rerenderings
-// TODO: cache for styles?
+// TODO: cache for styles to support pure rows & replace react-Measure
 // TODO: fix big batch prepend
 // TODO: fix laggy resize on item boundary
 // TODO: check fps and may be scrollTop as class prop
+// TODO: check on mobile
 
-const wait = (ms: number) => new Promise((resolve) => {
-  setTimeout(resolve, ms);
-});
+const wait = (ms: number) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 
 function getFirstIndexDiffer(arr1: object[], arr2: object[]) {
   for (let i = 0; i < arr1.length; i++) {
@@ -63,6 +64,7 @@ interface BuildOffsetsOptions<Item> {
 const DEFAULT_ESTIMATED_HEIGHT = 50;
 const DEFAULT_OVERSCAN_FACTOR = 1;
 const SCROLL_THROTTLE_MS = 100;
+const MEASURE_UPDATE_DEBOUNCE_MS = 10;
 
 export class VirtualList<Item extends Object> extends React.PureComponent<
   VirtualListProps<Item>,
@@ -319,14 +321,37 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.forceUpdate(); // for initial did update
   }
 
-  componentDidUpdate(prevProps: Readonly<VirtualListProps<Item>>): void {
+  componentDidUpdate(
+    prevProps: Readonly<VirtualListProps<Item>>,
+    prevState: Readonly<VirtualListState>
+  ): void {
+
+    // TODO: profile resizes
+    //     let hasChanges = false;
+    // Object.entries(this.props).forEach(([key, val]) => {
+    //   const prevValue: any = (prevProps as any)[key];
+    //
+    //   if (prevValue !== val) {
+    //     hasChanges= true;
+    //     console.warn(`Prop '${key}' changed. ${prevValue} -> ${val}`);
+    //   }
+    // });
+    // if (this.state) {
+    //   Object.entries(this.state).forEach(([key, val]) => {
+    //     const prevValue: any = (prevState as any)[key];
+    //     if (prevValue !== val) {
+    //       hasChanges= true;
+    //       console.warn(`State '${key}' changed. ${prevValue} -> ${val}`);
+    //     }
+    //   });
+    // }
+    // if (!hasChanges) {
+    //   console.warn('force update invoked update')
+    // }
+
     const { items, height, overscanFactor } = this.props;
     const { items: prevItems } = prevProps;
-    const {
-      lastPositionedIndex,
-      stopIndexToRender,
-      offset,
-    } = this.state;
+    const { lastPositionedIndex, stopIndexToRender, offset } = this.state;
     let correctedLastPositionedIndex = null;
     let indexMustBeCalculated =
       this.scrollingToIndex === null ? 0 : this.scrollingToIndex;
@@ -416,7 +441,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     } else {
       this.forceUpdate(callback);
     }
-  }, 1);
+  }, MEASURE_UPDATE_DEBOUNCE_MS);
 
   onResize = (index: number) => (contentRect: ContentRect) => {
     const { items } = this.props;
@@ -497,7 +522,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     await this.forceUpdateAsync(); // wait for new state which takes into account scrollingToIndex
 
     const { items, height, estimatedItemHeight } = this.props;
-    const {offset, lastPositionedIndex} = this.state;
+    const { offset, lastPositionedIndex } = this.state;
 
     const { offset: itemOffset } = this.getItemMetadata(items[index]);
     const containerHeight = this.getEstimatedTotalHeight(

@@ -13,13 +13,13 @@ export interface MessageProps {
   date: Date;
 }
 
-export const Message: React.FC<MessageProps> = ({
+export const Message: React.FC<MessageProps> = React.memo(function({
   fullName,
   avatarSrc,
   content,
   date,
   index,
-}) => {
+}) {
   return (
     <Comment
       author={
@@ -45,4 +45,4 @@ export const Message: React.FC<MessageProps> = ({
       datetime={<span>{moment(date).calendar()}</span>}
     />
   );
-};
+});
