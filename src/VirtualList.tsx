@@ -1,7 +1,7 @@
 import React, { UIEvent } from "react";
 import throttle from "lodash-es/throttle";
-import Measure, { ContentRect } from "react-measure";
 import debounce from "lodash-es/debounce";
+import { ItemMeasure } from "./ItemMeasure";
 
 // TODO: cache for styles to support pure rows & replace react-Measure
 // TODO: fix big batch prepend
@@ -325,7 +325,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     prevProps: Readonly<VirtualListProps<Item>>,
     prevState: Readonly<VirtualListState>
   ): void {
-
     // TODO: profile resizes
     //     let hasChanges = false;
     // Object.entries(this.props).forEach(([key, val]) => {
@@ -443,13 +442,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
   }, MEASURE_UPDATE_DEBOUNCE_MS);
 
-  onResize = (index: number) => (contentRect: ContentRect) => {
+  onResize = (index: number, contentRect: DOMRectReadOnly) => {
     const { items } = this.props;
     const { lastPositionedIndex, offset } = this.state;
 
     const item = items[index];
     const metadata = this.getItemMetadata(item);
-    const newHeight = contentRect.offset ? contentRect.offset.height : 0;
+    const newHeight = contentRect.height;
     const oldHeight = metadata.height;
 
     if (newHeight === oldHeight) {
@@ -580,7 +579,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       const { offset, height, measured } = this.getItemMetadata(item);
 
       itemsToRender.push(
-        <Measure key={getItemKey(item)} offset onResize={this.onResize(i)}>
+        <ItemMeasure key={getItemKey(item)} onResize={this.onResize} index={i}>
           {({ measureRef }) => (
             <div
               style={{
@@ -597,7 +596,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
               })}
             </div>
           )}
-        </Measure>
+        </ItemMeasure>
       );
     }
 

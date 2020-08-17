@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="scroll to fixed">
+    <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/ItemMeasure.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Message.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/Message.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/yarn.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -77,7 +79,8 @@
       <option name="presentableId" value="Default" />
       <updated>1597516730895</updated>
       <workItem from="1597516737434" duration="8447000" />
-      <workItem from="1597591019301" duration="34300000" />
+      <workItem from="1597591019301" duration="34640000" />
+      <workItem from="1597676362139" duration="6949000" />
     </task>
     <task id="LOCAL-00003" summary="VIrtualList tweaks">
       <created>1597518670789</created>
@@ -128,7 +131,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597664156094</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="better perf, pure components">
+      <created>1597665948220</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1597665948220</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -156,21 +166,22 @@
     <MESSAGE value="fixes and refactoring" />
     <MESSAGE value="refactoring" />
     <MESSAGE value="scroll to fixed" />
-    <option name="LAST_COMMIT_MESSAGE" value="scroll to fixed" />
+    <MESSAGE value="better perf, pure components" />
+    <option name="LAST_COMMIT_MESSAGE" value="better perf, pure components" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597665858220">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597665948083">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597665858220" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597665126653">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597665948083" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597688498841">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597665126653" />
-    <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597605609551">
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597688498841" />
+    <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597686232849">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="501" y="94" key="RollbackChangesDialog/0.23.1440.877@0.23.1440.877" timestamp="1597605609551" />
+    <state x="501" y="94" key="RollbackChangesDialog/0.23.1440.877@0.23.1440.877" timestamp="1597686232849" />
     <state x="221" y="100" key="SettingsEditor" timestamp="1597405945616">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
