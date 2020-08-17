@@ -2,29 +2,12 @@ import React, { UIEvent } from "react";
 import throttle from "lodash-es/throttle";
 import debounce from "lodash-es/debounce";
 import { ItemMeasure } from "./ItemMeasure";
+import { getFirstIndexDiffer, wait } from './utils'
 
-// TODO: cache for styles to support pure rows & replace react-Measure
-// TODO: fix big batch prepend
-// TODO: fix laggy resize on item boundary
-// TODO: check fps and may be scrollTop as class prop
 // TODO: check on mobile
+// TODO: tests
 
-const wait = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-
-function getFirstIndexDiffer(arr1: object[], arr2: object[]) {
-  for (let i = 0; i < arr1.length; i++) {
-    if (arr1[i] !== arr2[i]) {
-      return i;
-    }
-  }
-
-  return arr1.length;
-}
-
-interface VirtualListProps<Item extends Object> {
+interface VirtualListProps<Item> {
   items: Item[];
   height: number;
   width: number;
@@ -76,32 +59,27 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   state = {
-    offset: 0,
-    startIndexToRender: 0,
-    stopIndexToRender: -1,
-    lastPositionedIndex: 0,
+    offset: 0, // scrollTop container
+    startIndexToRender: 0, // startIndex for virtual window to render
+    stopIndexToRender: -1, // stopIndex for virtual window to render
+    lastPositionedIndex: 0, // index until all offsets are calculated
   };
 
   itemToMetadata: WeakMap<Item, ItemMetadata> = new WeakMap<
     Item,
     ItemMetadata
   >();
-  innerContainerRef = React.createRef<HTMLDivElement>();
-  outerContainerRef = React.createRef<HTMLDivElement>();
-  adjustScrollTopDeltaOnResizes: number = 0; // TODO: as an object for resizes
-  lastPositionedIndexAfterResizes: number | null = null;
+  containerRef = React.createRef<HTMLDivElement>();
+  adjustScrollTopDeltaOnResizes: number = 0; // for debounce
+  lastPositionedIndexAfterResizes: number | null = null; // for debounce
   scrollingToIndex: number | null = null;
 
-  ensureItem = (
+  ensureItemMetadata = (
     item: Item,
     onCacheMiss?: (meta: ItemMetadata) => void,
     newMeta?: Partial<ItemMetadata>
   ) => {
     const { estimatedItemHeight } = this.props;
-
-    if (!item) {
-      debugger;
-    }
 
     if (!this.itemToMetadata.has(item)) {
       const meta = {
@@ -124,7 +102,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     newMeta: Partial<ItemMetadata>,
     onCacheMiss?: (meta: ItemMetadata) => void
   ) => {
-    this.ensureItem(item, onCacheMiss, newMeta);
+    this.ensureItemMetadata(item, onCacheMiss, newMeta);
 
     const meta = this.itemToMetadata.get(item)!;
 
@@ -135,7 +113,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     item: Item,
     onCacheMiss?: (meta: ItemMetadata) => void
   ) => {
-    this.ensureItem(item, onCacheMiss);
+    this.ensureItemMetadata(item, onCacheMiss);
 
     return this.itemToMetadata.get(item)!;
   };
@@ -143,7 +121,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   /**
    * Build offsets for current view or needed index
    */
-  buildOffsetsForCurrentOffsetOrNeededIndex = ({
+  buildItemsMetadata = ({
     items,
     height,
     overscanFactor,
@@ -154,6 +132,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     let scrollTopDelta = 0;
 
     const adjustScrollTopDelta = (itemMeta: ItemMetadata) => {
+      // in case some new unmeasured items were prepend
       if (itemMeta.offset < offset) {
         scrollTopDelta += itemMeta.height;
       }
@@ -164,12 +143,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       lastPositionedItem,
       adjustScrollTopDelta
     );
-    const targetOffset = Math.max(0, offset - height * overscanFactor);
+    const targetOffsetStart = Math.max(0, offset - height * overscanFactor);
 
     if (
       lastPositionedIndex >= items.length - 1 ||
-      lastPositionedItemMetadata.offset > targetOffset
+      lastPositionedItemMetadata.offset > targetOffsetStart
     ) {
+      // get start and calculate end
       const startIndexToRender = this.getStartIndex(
         items,
         offset,
@@ -193,6 +173,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       };
     }
 
+    // get calculate start and end since lastPositionedIndex
     const { stopIndex, lastCalculatedIndex } = this.calculateStopIndex(
       lastPositionedIndex,
       indexMustBeCalculated,
@@ -265,7 +246,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       lastPositionedIndex
     );
 
-    return Math.max(0, nearestIndex - 1); // for a11y
+    return Math.max(0, nearestIndex - 1); // for a11y +1 item upper
   };
 
   calculateStopIndex = (
@@ -290,7 +271,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       curOffset += this.getItemMetadata(curItem, onCacheMiss).height;
     }
 
-    // for a11y
+    // for a11y +1 item
     if (stopIndex < items.length - 1) {
       stopIndex++;
       const curItem = items[stopIndex];
@@ -300,7 +281,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     const stopIndexWindow = stopIndex;
 
-    // in case we need to calculate more
+    // if we need to calculate more, e.g. for go to index
     while (
       (curOffset < targetOffset || stopIndex < indexMustBeCalculated) &&
       stopIndex < items.length - 1
@@ -325,29 +306,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     prevProps: Readonly<VirtualListProps<Item>>,
     prevState: Readonly<VirtualListState>
   ): void {
-    // TODO: profile resizes
-    //     let hasChanges = false;
-    // Object.entries(this.props).forEach(([key, val]) => {
-    //   const prevValue: any = (prevProps as any)[key];
-    //
-    //   if (prevValue !== val) {
-    //     hasChanges= true;
-    //     console.warn(`Prop '${key}' changed. ${prevValue} -> ${val}`);
-    //   }
-    // });
-    // if (this.state) {
-    //   Object.entries(this.state).forEach(([key, val]) => {
-    //     const prevValue: any = (prevState as any)[key];
-    //     if (prevValue !== val) {
-    //       hasChanges= true;
-    //       console.warn(`State '${key}' changed. ${prevValue} -> ${val}`);
-    //     }
-    //   });
-    // }
-    // if (!hasChanges) {
-    //   console.warn('force update invoked update')
-    // }
-
     const { items, height, overscanFactor } = this.props;
     const { items: prevItems } = prevProps;
     const { lastPositionedIndex, stopIndexToRender, offset } = this.state;
@@ -365,9 +323,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       }
 
       indexMustBeCalculated = Math.max(
-        stopIndexToRender,
+        stopIndexToRender + Math.max(0, items.length - prevItems.length), // in case huge prepend items
         indexMustBeCalculated
-      ); // in case huge prepend
+      );
     }
 
     const {
@@ -375,7 +333,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       startIndexToRender: newStartIndexToRender,
       lastPositionedIndex: newLastPositionedIndex,
       scrollTopDelta,
-    } = this.buildOffsetsForCurrentOffsetOrNeededIndex({
+    } = this.buildItemsMetadata({
       items,
       height,
       offset,
@@ -412,8 +370,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         return prevState;
       },
       () => {
-        if (scrollTopDelta && this.outerContainerRef.current) {
-          this.outerContainerRef.current.scrollTop += scrollTopDelta;
+        if (scrollTopDelta && this.containerRef.current) {
+          this.containerRef.current.scrollTop += scrollTopDelta;
         }
       }
     );
@@ -423,9 +381,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const callback = () => {
       if (
         this.adjustScrollTopDeltaOnResizes &&
-        this.outerContainerRef.current
+        this.containerRef.current
       ) {
-        this.outerContainerRef.current.scrollTop += this.adjustScrollTopDeltaOnResizes;
+        this.containerRef.current.scrollTop += this.adjustScrollTopDeltaOnResizes;
         this.adjustScrollTopDeltaOnResizes = 0;
       }
     };
@@ -457,10 +415,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     this.setItemMetadata(item, { height: newHeight, measured: true });
 
-    if (metadata.offset < offset) {
+    // to keep current view position for user
+    if (metadata.offset + metadata.height < offset) {
       this.adjustScrollTopDeltaOnResizes += newHeight - oldHeight;
     }
 
+    // to rebuild offsets
     const minLastPositionedIndex =
       this.lastPositionedIndexAfterResizes === null
         ? lastPositionedIndex
@@ -506,7 +466,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       );
     }
 
-    if (!this.innerContainerRef.current || !this.outerContainerRef.current) {
+    if (!this.containerRef.current) {
       this.scrollingToIndex = null;
       throw new Error("Containers are not initialized yet");
     }
@@ -516,9 +476,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       throw new Error("Index is out of items array");
     }
 
-    this.scrollingToIndex = index;
+    this.scrollingToIndex = index; // buildItemsMetadata knows about it
 
-    await this.forceUpdateAsync(); // wait for new state which takes into account scrollingToIndex
+    await this.forceUpdateAsync(); // wait for building new metadata by buildItemsMetadata
 
     const { items, height, estimatedItemHeight } = this.props;
     const { offset, lastPositionedIndex } = this.state;
@@ -540,9 +500,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       throw new Error(`Could not scroll to index ${index}. No retries left`);
     }
 
-    this.outerContainerRef.current.scrollTop = newOffset;
+    this.containerRef.current.scrollTop = newOffset;
 
-    await wait(SCROLL_THROTTLE_MS * 2);
+    await wait(SCROLL_THROTTLE_MS * 2); // wait for state.offset to be changed by scroll
 
     return this.scrollToIndex(index, retries - 1);
   };
@@ -568,12 +528,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       lastPositionedIndex
     );
 
-    console.log({
-      startIndexToRender,
-      stopIndexToRender,
-    });
-
-    const itemsToRender: React.ReactNode[] = [];
+    const itemsToRender = [];
     for (let i = startIndexToRender; i <= stopIndexToRender; i++) {
       const item = items[i];
       const { offset, height, measured } = this.getItemMetadata(item);
@@ -605,13 +560,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         style={{
           width,
           height,
-          position: "relative",
           overflow: "auto",
           WebkitOverflowScrolling: "touch",
           willChange: "transform",
         }}
         onScroll={this.onScroll}
-        ref={this.outerContainerRef}
+        ref={this.containerRef}
       >
         <div
           style={{
@@ -619,7 +573,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
             width: "100%",
             position: "relative",
           }}
-          ref={this.innerContainerRef}
         >
           {itemsToRender}
         </div>

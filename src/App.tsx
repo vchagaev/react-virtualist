@@ -124,6 +124,24 @@ function App() {
             >
               Scroll to message index
             </Button>
+            <Button
+              block={true}
+              onClick={() => {
+                if (virtualListRef.current) {
+                  virtualListRef.current
+                    .scrollToIndex(Math.round(Math.random() * messages.length))
+                    .then(() => {
+                      console.log("scrolled");
+                    })
+                    .catch((error) => {
+                      console.error(error);
+                    });
+                }
+              }}
+              type="primary"
+            >
+              Scroll to random index
+            </Button>
           </Space>
         </div>
         <div className="chat-messages">
