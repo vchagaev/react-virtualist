@@ -9,6 +9,10 @@ import debounce from "lodash-es/debounce";
 // TODO: fix laggy resize on item boundary
 // TODO: check fps and may be scrollTop as class prop
 
+const wait = (ms: number) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
 function getFirstIndexDiffer(arr1: object[], arr2: object[]) {
   for (let i = 0; i < arr1.length; i++) {
     if (arr1[i] !== arr2[i]) {
@@ -58,6 +62,7 @@ interface BuildOffsetsOptions<Item> {
 
 const DEFAULT_ESTIMATED_HEIGHT = 50;
 const DEFAULT_OVERSCAN_FACTOR = 1;
+const SCROLL_THROTTLE_MS = 100;
 
 export class VirtualList<Item extends Object> extends React.PureComponent<
   VirtualListProps<Item>,
@@ -213,7 +218,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.setState({
       offset: scrollTop,
     });
-  }, 100);
+  }, SCROLL_THROTTLE_MS);
 
   onScroll = (event: UIEvent) => {
     this.onScrollThrottled(event.currentTarget.scrollTop);
@@ -319,12 +324,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { items: prevItems } = prevProps;
     const {
       lastPositionedIndex,
-      startIndexToRender,
       stopIndexToRender,
       offset,
     } = this.state;
     let correctedLastPositionedIndex = null;
-    let indexMustBeCalculated = 0;
+    let indexMustBeCalculated =
+      this.scrollingToIndex === null ? 0 : this.scrollingToIndex;
     let itemsChanged = false;
 
     if (items !== prevItems) {
@@ -335,7 +340,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         correctedLastPositionedIndex = Math.max(0, differFrom - 1);
       }
 
-      indexMustBeCalculated = stopIndexToRender; // in case huge prepend
+      indexMustBeCalculated = Math.max(
+        stopIndexToRender,
+        indexMustBeCalculated
+      ); // in case huge prepend
     }
 
     const {
@@ -462,17 +470,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     );
   };
 
-  updateStateOffset = (offset: number) =>
+  forceUpdateAsync = () =>
     new Promise((resolve) => {
-      this.setState({
-        offset
-      }, resolve);
+      this.forceUpdate(resolve);
     });
 
   scrollToIndex = async (index: number, retries = 3): Promise<number> => {
-    const { items, height, overscanFactor, estimatedItemHeight } = this.props;
-    const { lastPositionedIndex, offset } = this.state;
-
     if (this.scrollingToIndex !== null && this.scrollingToIndex !== index) {
       throw new Error(
         `Already scrolling to index: ${this.scrollingToIndex}, but got index: ${index}`
@@ -484,38 +487,28 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       throw new Error("Containers are not initialized yet");
     }
 
-    if (index >= items.length) {
+    if (index >= this.props.items.length) {
       this.scrollingToIndex = null;
       throw new Error("Index is out of items array");
     }
 
     this.scrollingToIndex = index;
 
-    const {
-      lastPositionedIndex: newLastPositionedIndex,
-    } = this.buildOffsetsForCurrentOffsetOrNeededIndex({
-      items,
-      lastPositionedIndex,
-      offset,
-      height,
-      indexMustBeCalculated: index,
-      overscanFactor,
-    });
+    await this.forceUpdateAsync(); // wait for new state which takes into account scrollingToIndex
+
+    const { items, height, estimatedItemHeight } = this.props;
+    const {offset, lastPositionedIndex} = this.state;
 
     const { offset: itemOffset } = this.getItemMetadata(items[index]);
-
-    const newContainerHeight = this.getEstimatedTotalHeight(
+    const containerHeight = this.getEstimatedTotalHeight(
       items,
       estimatedItemHeight,
-      newLastPositionedIndex
+      lastPositionedIndex
     );
-    this.innerContainerRef.current.style.height = `${newContainerHeight}px`;
-    const maxPossibleOffset = newContainerHeight - height;
+    const maxPossibleOffset = containerHeight - height;
     const newOffset = Math.min(maxPossibleOffset, itemOffset);
 
-    // TODO: scrolling to fix
-
-    if (this.outerContainerRef.current.scrollTop === newOffset) {
+    if (offset === newOffset) {
       this.scrollingToIndex = null;
       return offset;
     } else if (retries <= 0) {
@@ -523,10 +516,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       throw new Error(`Could not scroll to index ${index}. No retries left`);
     }
 
-    console.log('scrolling to', {retries, offset, newOffset, scrollTop: this.outerContainerRef.current.scrollTop});
-
     this.outerContainerRef.current.scrollTop = newOffset;
-    await this.updateStateOffset(this.outerContainerRef.current.scrollTop); // wait for new layout and offset state and getitem metadata
+
+    await wait(SCROLL_THROTTLE_MS * 2);
+
     return this.scrollToIndex(index, retries - 1);
   };
 

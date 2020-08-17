@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="fixes and refactoring">
+    <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -76,7 +77,7 @@
       <option name="presentableId" value="Default" />
       <updated>1597516730895</updated>
       <workItem from="1597516737434" duration="8447000" />
-      <workItem from="1597591019301" duration="28328000" />
+      <workItem from="1597591019301" duration="32396000" />
     </task>
     <task id="LOCAL-00003" summary="VIrtualList tweaks">
       <created>1597518670789</created>
@@ -113,7 +114,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597618619031</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="refactoring">
+      <created>1597659846341</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1597659846341</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -139,17 +147,18 @@
     <MESSAGE value="VIrtualList scrollTo start" />
     <MESSAGE value="panel, fix scroll up, scroll to item stable" />
     <MESSAGE value="fixes and refactoring" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixes and refactoring" />
+    <MESSAGE value="refactoring" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactoring" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597659756908">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597659846216">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597659756908" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597618598076">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597659846216" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597664148383">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597618598076" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597664148383" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597605609551">
       <screen x="0" y="23" width="1440" height="877" />
     </state>

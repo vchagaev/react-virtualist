@@ -36,6 +36,14 @@ function App() {
   const [messageIndex, setMessageIndex] = useState<number>(
     DEFAULT_MESSAGE_INDEX
   );
+  const renderRowCallback = useCallback(
+    ({ item: messageData, ref }) => (
+      <div ref={ref}>
+        <Message {...messageData} />
+      </div>
+    ),
+    []
+  );
 
   return (
     <div className="app">
@@ -59,7 +67,10 @@ function App() {
             <Button
               block={true}
               onClick={() => {
-                const newMessages = [...getMessages(messagesBatchCount), ...messages];
+                const newMessages = [
+                  ...getMessages(messagesBatchCount),
+                  ...messages,
+                ];
                 setMessages(newMessages);
               }}
               type="primary"
@@ -69,7 +80,10 @@ function App() {
             <Button
               block={true}
               onClick={() => {
-                const newMessages = [...messages, ...getMessages(messagesBatchCount)];
+                const newMessages = [
+                  ...messages,
+                  ...getMessages(messagesBatchCount),
+                ];
                 setMessages(newMessages);
               }}
               type="primary"
@@ -99,10 +113,10 @@ function App() {
                   virtualListRef.current
                     .scrollToIndex(messageIndex)
                     .then(() => {
-                      // alert("Scrolled");
+                      console.log("scrolled");
                     })
                     .catch((error) => {
-                      alert(error.message);
+                      console.error(error);
                     });
                 }
               }}
@@ -121,11 +135,7 @@ function App() {
                 getItemKey={getItemKey}
                 width={width}
                 height={height}
-                renderRow={({ item: messageData, ref }) => (
-                  <div ref={ref}>
-                    <Message {...messageData} />
-                  </div>
-                )}
+                renderRow={renderRowCallback}
               />
             )}
           </AutoSizer>
