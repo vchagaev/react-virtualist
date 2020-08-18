@@ -10,7 +10,7 @@ import { Message, MessageProps } from "./Message";
 
 const { Text } = Typography;
 
-const DEFAULT_BATCH_COUNT = 10000;
+const DEFAULT_BATCH_COUNT = 1000;
 const DEFAULT_MESSAGE_INDEX = 0;
 
 const getMessages = (count = DEFAULT_BATCH_COUNT) => {
@@ -21,6 +21,7 @@ const getMessages = (count = DEFAULT_BATCH_COUNT) => {
     avatarSrc: faker.internet.avatar(),
     content: faker.lorem.paragraphs(Math.ceil(Math.random() * 2)),
     date: faker.date.past(),
+    offset: 0,
   }));
 };
 
@@ -37,9 +38,9 @@ function App() {
     DEFAULT_MESSAGE_INDEX
   );
   const renderRowCallback = useCallback(
-    ({ item: messageData, ref }) => (
+    ({ item: messageData, ref, offset }) => (
       <div ref={ref}>
-        <Message {...messageData} />
+        <Message {...messageData} offset={offset}/>
       </div>
     ),
     []
