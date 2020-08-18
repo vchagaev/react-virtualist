@@ -306,16 +306,15 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     let correctedLastPositionedIndex = null;
     let indexMustBeCalculated =
       this.scrollingToIndex === null ? 0 : this.scrollingToIndex;
-    let itemsChanged = false;
 
     if (items !== prevItems) {
-      itemsChanged = true;
       const differFrom = getFirstIndexDiffer(items, prevItems);
 
       if (differFrom <= lastPositionedIndex) {
         correctedLastPositionedIndex = Math.max(0, differFrom - 1);
       }
 
+      // TODO: item must be calculaed?
       indexMustBeCalculated = Math.max(
         stopIndexToRender + Math.max(0, items.length - prevItems.length), // in case huge prepend items
         indexMustBeCalculated
@@ -350,7 +349,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         } = prevState;
 
         if (
-          itemsChanged ||
           startIndexToRender !== newStartIndexToRender ||
           stopIndexToRender !== newStopIndexToRender ||
           lastPositionedIndex !== newLastPositionedIndex ||
@@ -369,7 +367,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       },
       () => {
         if (scrollTopDelta && this.containerRef.current) {
-          console.log("adjusting scrollTop callback", scrollTopDelta);
           this.containerRef.current.scrollTop += scrollTopDelta;
         }
       }
@@ -400,8 +397,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     if (newHeight === oldHeight) {
       return;
     }
-
-    console.log("new height", newHeight - oldHeight, index);
 
     this.setItemMetadata(item, { height: newHeight, measured: true });
 
@@ -505,6 +500,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       startIndexToRender,
       stopIndexToRender,
       lastPositionedIndex,
+      anchorItem
     } = this.state;
 
     const estimatedTotalHeight = this.getEstimatedTotalHeight(
@@ -528,6 +524,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
                 height,
                 opacity: measured ? 1 : 0,
                 width: "100%",
+                border: item === anchorItem ? '1px solid red' : undefined
               }}
             >
               {renderRow({
@@ -548,6 +545,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
           overflow: "auto",
           WebkitOverflowScrolling: "touch",
           willChange: "transform",
+          border: '1px solid grey'
         }}
         onScroll={this.onScroll}
         ref={this.containerRef}
