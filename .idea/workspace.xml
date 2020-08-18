@@ -77,7 +77,7 @@
       <updated>1597516730895</updated>
       <workItem from="1597516737434" duration="8447000" />
       <workItem from="1597591019301" duration="34640000" />
-      <workItem from="1597676362139" duration="32703000" />
+      <workItem from="1597676362139" duration="38311000" />
     </task>
     <task id="LOCAL-00003" summary="VIrtualList tweaks">
       <created>1597518670789</created>
@@ -156,7 +156,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597752308684</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="clear">
+      <created>1597752973986</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1597752973986</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -188,17 +195,18 @@
     <MESSAGE value="my measure" />
     <MESSAGE value="pretty" />
     <MESSAGE value="anchoring item" />
-    <option name="LAST_COMMIT_MESSAGE" value="anchoring item" />
+    <MESSAGE value="clear" />
+    <option name="LAST_COMMIT_MESSAGE" value="clear" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597752308547">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597752973739">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597752308547" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597752964671">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597752973739" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597762222819">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597752964671" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597762222819" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597743482460">
       <screen x="0" y="23" width="1440" height="877" />
     </state>

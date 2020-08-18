@@ -391,12 +391,19 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     const item = items[index];
     const metadata = this.getItemMetadata(item);
-    const newHeight = contentRect.height;
+    const newHeight = Math.round(contentRect.height);
     const oldHeight = metadata.height;
 
     if (newHeight === oldHeight) {
       return;
     }
+
+    console.log('onResize', {
+      index,
+      newHeight,
+      oldHeight,
+      delta: newHeight - oldHeight
+    });
 
     this.setItemMetadata(item, { height: newHeight, measured: true });
 
@@ -456,7 +463,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       throw new Error("Index is out of items array");
     }
 
-    this.scrollingToIndex = index; // buildItemsMetadata knows about it
+    this.scrollingToIndex = index; // componentDidUpdate knows about it
 
     await this.forceUpdateAsync(); // wait for building new metadata by buildItemsMetadata
 
@@ -524,7 +531,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
                 height,
                 opacity: measured ? 1 : 0,
                 width: "100%",
-                border: item === anchorItem ? '1px solid red' : undefined
+                outline: item === anchorItem ? '1px solid red' : undefined
               }}
             >
               {renderRow({
