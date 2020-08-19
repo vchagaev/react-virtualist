@@ -143,6 +143,9 @@ function App() {
             >
               Scroll to random index
             </Button>
+            <Divider />
+            <div id="debug-container">
+            </div>
           </Space>
         </div>
         <div className="chat-messages">

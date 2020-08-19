@@ -1,4 +1,5 @@
 import React, { UIEvent } from "react";
+import ReactDOM from "react-dom";
 import throttle from "lodash-es/throttle";
 import debounce from "lodash-es/debounce";
 import { ItemMeasure } from "./ItemMeasure";
@@ -66,10 +67,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   >();
   offset: number = 0;
   anchorItem: Item | null = null;
-  scrollTopDelta: number = 0;
   containerRef = React.createRef<HTMLDivElement>();
   lastPositionedIndex: number = 0; // for debounce
   scrollingToIndex: number | null = null;
+  isScrolling: boolean = false;
 
   ensureItemMetadata = (item: Item) => {
     const { estimatedItemHeight } = this.props;
@@ -130,7 +131,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       const {
         stopIndexToRender,
         lastCalculatedIndex,
-      } = this.calculateStopIndex(startIndexToRender, indexMustBeCalculated, offset);
+      } = this.calculateStopIndex(
+        startIndexToRender,
+        indexMustBeCalculated,
+        offset
+      );
       const newLastPositionedIndex = Math.max(
         lastPositionedIndex,
         lastCalculatedIndex
@@ -180,16 +185,22 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     };
   };
 
+  onScrollDebounced = debounce(() => {
+    this.isScrolling = false;
+
+    this.forceUpdate();
+  }, 5 * 100);
+
   onScrollThrottled = throttle((scrollTop: number) => {
     this.offset = Math.round(scrollTop);
+    this.isScrolling = true;
 
-    console.log('Logger: setting offset from container', Math.round(scrollTop));
+    this.onScrollDebounced();
 
     this.forceUpdate();
   }, SCROLL_THROTTLE_MS);
 
   onScroll = (event: UIEvent) => {
-    console.log('Logger: onScroll', Math.round(event.currentTarget.scrollTop));
     this.onScrollThrottled(event.currentTarget.scrollTop);
   };
 
@@ -238,7 +249,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }; // for a11y +1 item upper}
   };
 
-  calculateStopIndex = (startIndex: number, indexMustBeCalculated: number, offset: number) => {
+  calculateStopIndex = (
+    startIndex: number,
+    indexMustBeCalculated: number,
+    offset: number
+  ) => {
     const { items, height } = this.props;
 
     const startItem = items[startIndex];
@@ -292,8 +307,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   ): void {
     trace(this.props, this.state, prevProps, prevState);
 
-    console.log('Logger: DU with offset', this.offset);
-
     const { items, height } = this.props;
     const { items: prevItems } = prevProps;
     const { startIndexToRender, stopIndexToRender } = this.state;
@@ -333,32 +346,29 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       anchorItem: this.anchorItem,
     });
 
-    console.log("Applying new state after build", {
-      startIndexToRender: newStartIndexToRender,
-      stopIndexToRender: newStopIndexToRender,
-      lastPositionedIndex: newLastPositionedIndex,
-      anchorItem: newAnchorItem,
-    });
-
     this.lastPositionedIndex = newLastPositionedIndex;
     this.anchorItem = newAnchorItem;
-    this.scrollTopDelta = scrollTopDelta;
 
-    if (startIndexToRender !== newStartIndexToRender ||
-      stopIndexToRender !== newStopIndexToRender) {
-      this.setState({
-        startIndexToRender: newStartIndexToRender,
-        stopIndexToRender: newStopIndexToRender
-      }, () => {
-        if (scrollTopDelta && this.containerRef.current) {
-          console.log('Logger: scrollTopDelta adjusting', scrollTopDelta);
-          this.containerRef.current.scrollTop += scrollTopDelta;
+    if (
+      startIndexToRender !== newStartIndexToRender ||
+      stopIndexToRender !== newStopIndexToRender
+    ) {
+      this.setState(
+        {
+          startIndexToRender: newStartIndexToRender,
+          stopIndexToRender: newStopIndexToRender,
+        },
+        () => {
+          if (scrollTopDelta && this.containerRef.current) {
+            console.log("Logger: scrollTopDelta adjusting", scrollTopDelta);
+            this.containerRef.current.scrollTop += scrollTopDelta;
+          }
         }
-      });
+      );
     } else if (scrollTopDelta) {
       this.forceUpdate(() => {
         if (scrollTopDelta && this.containerRef.current) {
-          console.log('Logger: scrollTopDelta adjusting', scrollTopDelta);
+          console.log("Logger: scrollTopDelta adjusting", scrollTopDelta);
           this.containerRef.current.scrollTop += scrollTopDelta;
         }
       });
@@ -507,7 +517,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
                 height,
                 opacity: measured ? 1 : 0,
                 width: "100%",
-                outline: item === this.anchorItem ? "1px solid red" : undefined,
+                outline: item === this.anchorItem ? "4px solid red" : undefined,
               }}
             >
               {renderRow({
@@ -543,6 +553,21 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         >
           {itemsToRender}
         </div>
+        {ReactDOM.createPortal(
+          <div className="debug-info">
+            <span>startIndexToRender: {startIndexToRender}</span>
+            <span>stopIndexToRender: {stopIndexToRender}</span>
+            <span>offset: {this.offset}</span>
+            <span>
+              anchorItemIndex:{" "}
+              {this.anchorItem && (this.anchorItem as any).index}
+            </span>
+            <span>lastPositionedIndex: {this.lastPositionedIndex}</span>
+            <span>scrollingToIndex: {this.scrollingToIndex}</span>
+            <span>isScrolling: {this.isScrolling ? "true" : "false"}</span>
+          </div>,
+          document.getElementById("debug-container")!
+        )}
       </div>
     );
   }
