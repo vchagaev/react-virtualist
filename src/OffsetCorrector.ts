@@ -1,39 +1,52 @@
 export class OffsetCorrector {
-  indexToCorrectionMap: Map<number, number>;
-  indexToCorrectedHeightMap: Map<number, number>;
+  indexToOffsetDeltaMap: Map<number, number>;
+  indexToHeightDeltaMap: Map<number, number>;
   lastCorrectedIndex: number;
   firstCorrectedIndex: number;
 
   constructor() {
-    this.indexToCorrectionMap = new Map<number, number>();
-    this.indexToCorrectedHeightMap = new Map<number, number>();
+    this.indexToOffsetDeltaMap = new Map<number, number>();
+    this.indexToHeightDeltaMap = new Map<number, number>();
     this.lastCorrectedIndex = 0;
     this.firstCorrectedIndex = 0;
   }
-  init(index: number, correction: number) {
+  log() {
+    if (this.isInitialized()) {
+      const offsets = Array.from(this.indexToOffsetDeltaMap.entries())
+        .map(([index, value]) => `${index} -> ${value}`)
+        .join(",\n");
+      const heights = Array.from(this.indexToHeightDeltaMap.entries())
+        .map(([index, value]) => `${index} -> ${value}`)
+        .join(",\n");
+
+      console.log('curroffsets: \n', offsets);
+      console.log('currheights: \n', heights);
+    }
+  }
+  init(index: number, initDelta: number) {
     console.log("OffsetCorrector: init", index);
 
-    if (this.indexToCorrectionMap.size) {
+    if (this.indexToOffsetDeltaMap.size) {
       console.warn("initing already using OffsetCorrector. It will be cleared");
     }
 
-    this.indexToCorrectionMap.clear();
-    this.indexToCorrectedHeightMap.clear();
+    this.indexToOffsetDeltaMap.clear();
+    this.indexToHeightDeltaMap.clear();
     this.firstCorrectedIndex = index;
     this.lastCorrectedIndex = index;
-    this.indexToCorrectionMap.set(index, correction);
+    this.indexToOffsetDeltaMap.set(index, initDelta);
   }
   isInitialized() {
-    return this.indexToCorrectionMap.size > 0;
+    return this.indexToOffsetDeltaMap.size > 0;
   }
   clear() {
     console.log("OffsetCorrector: clear");
-    this.indexToCorrectionMap.clear();
-    this.indexToCorrectedHeightMap.clear();
+    this.indexToOffsetDeltaMap.clear();
+    this.indexToHeightDeltaMap.clear();
     this.lastCorrectedIndex = 0;
     this.firstCorrectedIndex = 0;
   }
-  addNewDelta(index: number, correction: number) {
+  addNewHeightDelta(index: number, heightDelta: number) {
     if (index > this.firstCorrectedIndex) {
       console.warn(
         "addNewDelta index are higher than firstCorrectedIndex. It is just ignored",
@@ -48,61 +61,67 @@ export class OffsetCorrector {
       "OffsetCorrector: new delta",
       {
         index,
-        correction,
-        valueBefore: this.indexToCorrectionMap.get(index)
+        correction: heightDelta,
+        valueBefore: this.indexToOffsetDeltaMap.get(index),
       },
       "cost:",
       Math.abs(index - this.lastCorrectedIndex)
     );
 
-    this.indexToCorrectedHeightMap.set(index, correction);
+    let realHeightDelta = heightDelta;
+    let prevHeightDelta = this.indexToHeightDeltaMap.get(index);
+
+    if (prevHeightDelta !== undefined) {
+      realHeightDelta = heightDelta - prevHeightDelta;
+    }
+
+    this.indexToHeightDeltaMap.set(index, heightDelta);
+
 
     if (index < this.lastCorrectedIndex) {
-      let curCorrection = this.indexToCorrectionMap.get(
+      let curCorrection = this.indexToOffsetDeltaMap.get(
         this.lastCorrectedIndex
       )!;
 
       for (let i = this.lastCorrectedIndex; i >= index; i--) {
-        this.indexToCorrectionMap.set(i, curCorrection);
+        this.indexToOffsetDeltaMap.set(i, curCorrection);
       }
 
-      this.indexToCorrectionMap.set(index, curCorrection - correction);
+      this.indexToOffsetDeltaMap.set(index, curCorrection - realHeightDelta);
       this.lastCorrectedIndex = index;
     } else {
       for (let i = index; i >= this.lastCorrectedIndex; i--) {
-        let curCorrection = this.indexToCorrectionMap.get(i)!;
+        let curCorrection = this.indexToOffsetDeltaMap.get(i)!;
 
-        if (typeof curCorrection !== "number") {
-          debugger; // impossible
-        }
-
-        this.indexToCorrectionMap.set(i, curCorrection - correction);
+        this.indexToOffsetDeltaMap.set(i, curCorrection - realHeightDelta);
       }
     }
   }
-  getCorrectedHeightsMap() {
-    return this.indexToCorrectedHeightMap;
+  getHeightDeltaMap() {
+    return this.indexToHeightDeltaMap;
   }
-  getCorrection(index: number) {
-    const correction = this.indexToCorrectionMap.get(index);
+  getOffsetDelta(index: number) {
+    const offsetDelta = this.indexToOffsetDeltaMap.get(index);
 
-    if (typeof correction === "number") {
-      return correction;
+    if (typeof offsetDelta === "number") {
+      return offsetDelta;
     }
 
     if (index > this.firstCorrectedIndex) {
       return 0;
     }
 
-    const lastCorrection = this.indexToCorrectionMap.get(this.lastCorrectedIndex);
+    const lastOffsetDelta = this.indexToOffsetDeltaMap.get(
+      this.lastCorrectedIndex
+    );
 
-    return typeof lastCorrection === 'number' ? lastCorrection : 0;
+    return typeof lastOffsetDelta === "number" ? lastOffsetDelta : 0;
   }
-  getCorrectedHeight(index: number) {
-    const heightCorrection = this.indexToCorrectedHeightMap.get(index);
+  getHeightDelta(index: number) {
+    const heightDelta = this.indexToHeightDeltaMap.get(index);
 
-    if (typeof heightCorrection === 'number') {
-      return heightCorrection;
+    if (typeof heightDelta === "number") {
+      return heightDelta;
     }
 
     return 0;

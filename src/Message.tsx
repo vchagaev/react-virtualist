@@ -11,7 +11,8 @@ export interface MessageProps {
   avatarSrc: string;
   content: string;
   date: Date;
-  offset: number;
+  offset: string;
+  height: string;
 }
 
 export const Message: React.FC<MessageProps> = React.memo(function({
@@ -20,13 +21,14 @@ export const Message: React.FC<MessageProps> = React.memo(function({
   content,
   date,
   index,
-  offset
+  offset,
+  height
 }) {
   return (
     <Comment
       author={
         <a href={`#/${fullName}`}>
-          {index} {fullName} {offset}
+          {index} {fullName} (Offset: {offset}) (Height: {height})
         </a>
       }
       avatar={<Avatar src={avatarSrc} alt={fullName} />}

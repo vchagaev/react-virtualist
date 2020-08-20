@@ -21,11 +21,11 @@ export const ItemMeasure = React.memo<ItemMeasureProps>(function ({
   const measureRef = useRef<HTMLDivElement>(null);
   const observer = useRef<ResizeObserver | null>(null);
   const onResizeCallback = useCallback<ResizeObserverCallback>(
-    debounce((entries) => {
+    (entries) => {
       for (let entry of entries) {
         onResize(index, entry.contentRect);
       }
-    }, RESIZE_DEBOUNCE_MS),
+    },
     [onResize, index]
   );
 

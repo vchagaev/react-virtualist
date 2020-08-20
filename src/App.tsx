@@ -21,7 +21,8 @@ const getMessages = (count = DEFAULT_BATCH_COUNT) => {
     avatarSrc: faker.internet.avatar(),
     content: faker.lorem.paragraphs(Math.ceil(Math.random() * 2)),
     date: faker.date.past(),
-    offset: 0,
+    offset: 'no',
+    height: 'no'
   }));
 };
 
@@ -38,9 +39,9 @@ function App() {
     DEFAULT_MESSAGE_INDEX
   );
   const renderRowCallback = useCallback(
-    ({ item: messageData, ref, offset }) => (
+    ({ item: messageData, ref, offset, height }) => (
       <div ref={ref}>
-        <Message {...messageData} offset={offset}/>
+        <Message {...messageData} offset={offset} height={height}/>
       </div>
     ),
     []
