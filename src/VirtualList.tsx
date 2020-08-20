@@ -21,6 +21,7 @@ interface VirtualListProps<Item> {
   getItemKey: (item: Item) => string;
   estimatedItemHeight: number;
   renderRow: (renderRowProps: RenderRowProps<Item>) => React.ReactNode;
+  reversed: boolean;
 }
 
 interface VirtualListState {
@@ -65,6 +66,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 > {
   static defaultProps = {
     estimatedItemHeight: DEFAULT_ESTIMATED_HEIGHT,
+    reversed: false,
   };
 
   state = {
@@ -595,6 +597,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       renderRow,
       getItemKey,
       estimatedItemHeight,
+      reversed,
     } = this.props;
     const { startIndexToRender, stopIndexToRender } = this.state;
 
@@ -637,8 +640,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
                       : this.offsetCorrector.getOffsetDelta(i)
                       ? "yellow"
                       : "transparent",
-                  outline:
-                    item === this.anchorItem ? "4px solid red" : undefined,
                 }}
               >
                 {renderRow({
@@ -658,46 +659,61 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       );
     }
 
+    let curHeight = height;
+    let curOverflow = "auto";
+    if (reversed && estimatedTotalHeight < height) {
+      curHeight = estimatedTotalHeight;
+      curOverflow = "none";
+    }
+
     return (
       <div
         style={{
-          width,
           height,
-          overflow: "auto",
-          WebkitOverflowScrolling: "touch",
-          willChange: "transform",
-          border: "1px solid grey",
+          position: "relative",
         }}
-        onScroll={this.onScroll}
-        ref={this.containerRef}
       >
         <div
           style={{
-            height: estimatedTotalHeight,
-            width: "100%",
-            position: "relative",
+            width,
+            height: curHeight,
+            overflow: curOverflow,
+            WebkitOverflowScrolling: "touch",
+            willChange: "transform",
+            position: "absolute",
+            bottom: reversed ? 0 : undefined,
           }}
+          onScroll={this.onScroll}
+          ref={this.containerRef}
         >
-          {itemsToRender}
+          <div
+            style={{
+              height: estimatedTotalHeight,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {itemsToRender}
+          </div>
+          {ReactDOM.createPortal(
+            <div className="debug-info">
+              <span>startIndexToRender: {startIndexToRender}</span>
+              <span>stopIndexToRender: {stopIndexToRender}</span>
+              <span>offset: {this.offset}</span>
+              <span>
+                anchorItemIndex:{" "}
+                {this.anchorItem && (this.anchorItem as any).index}
+              </span>
+              <span>lastPositionedIndex: {this.lastPositionedIndex}</span>
+              <span>scrollingToIndex: {this.scrollingToIndex}</span>
+              <span>isScrolling: {this.isScrolling ? "true" : "false"}</span>
+              <span>
+                scrollingDirection: {this.scrollingDirection ? "down" : "up"}
+              </span>
+            </div>,
+            document.getElementById("debug-container")!
+          )}
         </div>
-        {ReactDOM.createPortal(
-          <div className="debug-info">
-            <span>startIndexToRender: {startIndexToRender}</span>
-            <span>stopIndexToRender: {stopIndexToRender}</span>
-            <span>offset: {this.offset}</span>
-            <span>
-              anchorItemIndex:{" "}
-              {this.anchorItem && (this.anchorItem as any).index}
-            </span>
-            <span>lastPositionedIndex: {this.lastPositionedIndex}</span>
-            <span>scrollingToIndex: {this.scrollingToIndex}</span>
-            <span>isScrolling: {this.isScrolling ? "true" : "false"}</span>
-            <span>
-              scrollingDirection: {this.scrollingDirection ? "down" : "up"}
-            </span>
-          </div>,
-          document.getElementById("debug-container")!
-        )}
       </div>
     );
   }

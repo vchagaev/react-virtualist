@@ -159,6 +159,7 @@ function App() {
                 width={width}
                 height={height}
                 renderRow={renderRowCallback}
+                reversed={true}
               />
             )}
           </AutoSizer>

@@ -207,7 +207,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597945093177</updated>
     </task>
-    <option name="localTasksCounter" value="22" />
+    <task id="LOCAL-00022" summary="empty list support">
+      <created>1597947431377</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1597947431377</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -246,17 +253,18 @@
     <MESSAGE value="fix infinite loop" />
     <MESSAGE value="fix changing height delta several times" />
     <MESSAGE value="fix items height changes scrloling down" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix items height changes scrloling down" />
+    <MESSAGE value="empty list support" />
+    <option name="LAST_COMMIT_MESSAGE" value="empty list support" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597945093071">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597947431268">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597945093071" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597947406210">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597947431268" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597948528942">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597947406210" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597948528942" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597770245355">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
@@ -273,6 +281,10 @@
       <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state x="320" y="197" key="Vcs.Push.Dialog.v2/0.23.1440.877@0.23.1440.877" timestamp="1597518674406" />
+    <state x="385" y="211" key="run.anything.popup" timestamp="1597948200566">
+      <screen x="0" y="23" width="1440" height="877" />
+    </state>
+    <state x="385" y="211" key="run.anything.popup/0.23.1440.877@0.23.1440.877" timestamp="1597948200566" />
     <state x="385" y="112" width="670" height="676" key="search.everywhere.popup" timestamp="1597942114674">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
