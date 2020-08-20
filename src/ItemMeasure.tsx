@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useRef } from "react";
+import debounce from "lodash-es/debounce";
 
 interface ItemMeasureChildrenProps {
   measureRef: React.Ref<HTMLDivElement>;
 }
+
+const RESIZE_DEBOUNCE_MS = 100;
 
 interface ItemMeasureProps {
   index: number;
@@ -18,14 +21,13 @@ export const ItemMeasure = React.memo<ItemMeasureProps>(function ({
   const measureRef = useRef<HTMLDivElement>(null);
   const observer = useRef<ResizeObserver | null>(null);
   const onResizeCallback = useCallback<ResizeObserverCallback>(
-    (entries) => {
+    debounce((entries) => {
       for (let entry of entries) {
         onResize(index, entry.contentRect);
       }
-    },
+    }, RESIZE_DEBOUNCE_MS),
     [onResize, index]
   );
-
 
   useEffect(() => {
     observer.current = new ResizeObserver(onResizeCallback);
