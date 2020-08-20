@@ -21,8 +21,8 @@ const getMessages = (count = DEFAULT_BATCH_COUNT) => {
     avatarSrc: faker.internet.avatar(),
     content: faker.lorem.paragraphs(Math.ceil(Math.random() * 2)),
     date: faker.date.past(),
-    offset: 'no',
-    height: 'no'
+    offset: "no",
+    height: "no",
   }));
 };
 
@@ -41,7 +41,7 @@ function App() {
   const renderRowCallback = useCallback(
     ({ item: messageData, ref, offset, height }) => (
       <div ref={ref}>
-        <Message {...messageData} offset={offset} height={height}/>
+        <Message {...messageData} offset={offset} height={height} />
       </div>
     ),
     []
@@ -113,7 +113,7 @@ function App() {
               onClick={() => {
                 if (virtualListRef.current) {
                   virtualListRef.current
-                    .scrollToIndex(messageIndex)
+                    .scrollTo({ index: messageIndex })
                     .then(() => {
                       console.log("scrolled");
                     })
@@ -131,7 +131,9 @@ function App() {
               onClick={() => {
                 if (virtualListRef.current) {
                   virtualListRef.current
-                    .scrollToIndex(Math.round(Math.random() * messages.length))
+                    .scrollTo({
+                      index: Math.round(Math.random() * messages.length),
+                    })
                     .then(() => {
                       console.log("scrolled");
                     })
@@ -145,8 +147,7 @@ function App() {
               Scroll to random index
             </Button>
             <Divider />
-            <div id="debug-container">
-            </div>
+            <div id="debug-container"></div>
           </Space>
         </div>
         <div className="chat-messages">

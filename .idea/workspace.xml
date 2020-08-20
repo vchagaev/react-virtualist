@@ -214,7 +214,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597947431377</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="reversed support">
+      <created>1597948545349</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1597948545349</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -254,17 +261,18 @@
     <MESSAGE value="fix changing height delta several times" />
     <MESSAGE value="fix items height changes scrloling down" />
     <MESSAGE value="empty list support" />
-    <option name="LAST_COMMIT_MESSAGE" value="empty list support" />
+    <MESSAGE value="reversed support" />
+    <option name="LAST_COMMIT_MESSAGE" value="reversed support" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597947431268">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597948545241">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597947431268" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597948528942">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597948545241" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597958147330">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597948528942" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597958147330" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597770245355">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
@@ -285,9 +293,9 @@
       <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state x="385" y="211" key="run.anything.popup/0.23.1440.877@0.23.1440.877" timestamp="1597948200566" />
-    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup" timestamp="1597942114674">
+    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup" timestamp="1597953127405">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup/0.23.1440.877@0.23.1440.877" timestamp="1597942114674" />
+    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup/0.23.1440.877@0.23.1440.877" timestamp="1597953127405" />
   </component>
 </project>
