@@ -11,9 +11,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/OffsetCorrector.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ItemMeasure.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ItemMeasure.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -180,7 +178,14 @@
       <option name="project" value="LOCAL" />
       <updated>1597865991288</updated>
     </task>
-    <option name="localTasksCounter" value="18" />
+    <task id="LOCAL-00018" summary="anchor working">
+      <created>1597936654116</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1597936654116</updated>
+    </task>
+    <option name="localTasksCounter" value="19" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -215,17 +220,18 @@
     <MESSAGE value="fix" />
     <MESSAGE value="before refactoring" />
     <MESSAGE value="debug info and clear" />
-    <option name="LAST_COMMIT_MESSAGE" value="debug info and clear" />
+    <MESSAGE value="anchor working" />
+    <option name="LAST_COMMIT_MESSAGE" value="anchor working" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597865991156">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1597936653994">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597865991156" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597936593384">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1597936653994" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1597938356513">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597936593384" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1597938356513" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597770245355">
       <screen x="0" y="23" width="1440" height="877" />
     </state>

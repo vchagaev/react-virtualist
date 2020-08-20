@@ -51,6 +51,7 @@ interface BuildOffsetsOptions<Item> {
 const DEFAULT_ESTIMATED_HEIGHT = 50;
 const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
+const SCROLL_DEBOUNCE_MS = 200;
 
 enum ScrollingDirection {
   up,
@@ -184,7 +185,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     console.log("Logger: rerender because isScrolling false");
 
     this.forceUpdate();
-  }, 20 * 100);
+  }, SCROLL_DEBOUNCE_MS);
 
   onScrollThrottled = throttle((scrollTop: number) => {
     this.scrollingDirection =
@@ -398,7 +399,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     const stopIndexOffsetAfter = this.getItemMetadata(
       items[newStopIndexToRender]
-    ).offset;
+    ).offset + this.offsetCorrector.getCorrection(newStopIndexToRender);
 
     if (scrollTopDelta) {
       console.log("Logger: rerender because scrollTopDelta", scrollTopDelta);
@@ -510,7 +511,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     });
 
   // TODO: without async
-  scrollToIndex = async (index: number, retries = 1): Promise<number> => {
+  scrollToIndex = async (index: number, retries = 2): Promise<number> => {
     if (this.scrollingToIndex !== null && this.scrollingToIndex !== index) {
       throw new Error(
         `Already scrolling to index: ${this.scrollingToIndex}, but got index: ${index}`
