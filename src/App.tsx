@@ -10,7 +10,7 @@ import { Message, MessageProps } from "./Message";
 
 const { Text } = Typography;
 
-const DEFAULT_BATCH_COUNT = 1000;
+const DEFAULT_BATCH_COUNT = 1;
 const DEFAULT_MESSAGE_INDEX = 0;
 
 const getMessages = (count = DEFAULT_BATCH_COUNT) => {
