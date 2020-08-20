@@ -52,7 +52,7 @@ interface BuildOffsetsOptions<Item> {
 const DEFAULT_ESTIMATED_HEIGHT = 50;
 const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
-const SCROLL_DEBOUNCE_MS = 60 * 1000;
+const SCROLL_DEBOUNCE_MS = 100;
 
 enum ScrollingDirection {
   up,
@@ -287,7 +287,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     if (stopIndex < items.length - 1) {
       stopIndex++;
       const curItem = items[stopIndex];
-      this.setItemMetadata(curItem, { offset: curOffsetCorrected });
+      this.setItemMetadata(curItem, { offset: curOffset });
       curOffset += this.getItemMetadata(curItem).height;
       curOffsetCorrected +=
         this.getItemMetadata(curItem).height +
@@ -305,7 +305,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     ) {
       stopIndex++;
       const curItem = items[stopIndex];
-      this.setItemMetadata(curItem, { offset: curOffsetCorrected });
+      this.setItemMetadata(curItem, { offset: curOffset });
       curOffset += this.getItemMetadata(curItem).height;
       curOffsetCorrected +=
         this.getItemMetadata(curItem).height +
@@ -471,13 +471,26 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       anchorItemIndex = this.lastPositionedIndex;
     }
 
-    if (index < anchorItemIndex && this.isScrolling) {
+    if (
+      (index < anchorItemIndex && this.isScrolling)
+    ) {
       if (!this.offsetCorrector.isInitialized()) {
         this.offsetCorrector.init(this.lastPositionedIndex, 0);
-        this.offsetCorrector.addNewHeightDelta(index, newHeight - originalHeight);
+        this.offsetCorrector.addNewHeightDelta(
+          index,
+          newHeight - originalHeight
+        );
       } else if (index <= this.offsetCorrector.firstCorrectedIndex) {
-        this.offsetCorrector.addNewHeightDelta(index, newHeight - originalHeight);
+        this.offsetCorrector.addNewHeightDelta(
+          index,
+          newHeight - originalHeight
+        );
       }
+    } else if (this.offsetCorrector.getHeightDeltaMap().has(index)) {
+      this.offsetCorrector.addNewHeightDelta(
+        index,
+        newHeight - originalHeight
+      );
     } else {
       this.setItemMetadata(item, { height: newHeight, measured: true });
       this.lastPositionedIndex = Math.min(
@@ -596,8 +609,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         <ItemMeasure key={getItemKey(item)} onResize={this.onResize} index={i}>
           {({ measureRef }) => {
             const top = offset + this.offsetCorrector.getOffsetDelta(i);
-            const curHeight =
-              height + this.offsetCorrector.getHeightDelta(i);
+            const curHeight = height + this.offsetCorrector.getHeightDelta(i);
 
             return (
               <div
@@ -636,8 +648,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         </ItemMeasure>
       );
     }
-
-    this.offsetCorrector.log();
 
     return (
       <div

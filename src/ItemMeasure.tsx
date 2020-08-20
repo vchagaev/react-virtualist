@@ -1,11 +1,8 @@
 import React, { useCallback, useEffect, useRef } from "react";
-import debounce from "lodash-es/debounce";
 
 interface ItemMeasureChildrenProps {
   measureRef: React.Ref<HTMLDivElement>;
 }
-
-const RESIZE_DEBOUNCE_MS = 100;
 
 interface ItemMeasureProps {
   index: number;
