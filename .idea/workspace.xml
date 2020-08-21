@@ -269,7 +269,14 @@
       <option name="project" value="LOCAL" />
       <updated>1598008834903</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="todos and simple refactoring">
+      <created>1598009362466</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1598009362466</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -288,7 +295,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="panel, fix scroll up, scroll to item stable" />
     <MESSAGE value="fixes and refactoring" />
     <MESSAGE value="refactoring" />
     <MESSAGE value="scroll to fixed" />
@@ -313,17 +319,18 @@
     <MESSAGE value="better debug design" />
     <MESSAGE value="refactor corrector" />
     <MESSAGE value="better rule for can adjust scroll top" />
-    <option name="LAST_COMMIT_MESSAGE" value="better rule for can adjust scroll top" />
+    <MESSAGE value="todos and simple refactoring" />
+    <option name="LAST_COMMIT_MESSAGE" value="todos and simple refactoring" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598008834801">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598009362342">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598008834801" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598009262262">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598009362342" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598009793425">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598009262262" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598009793425" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597770245355">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
@@ -344,9 +351,9 @@
       <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state x="385" y="211" key="run.anything.popup/0.23.1440.877@0.23.1440.877" timestamp="1597948200566" />
-    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup" timestamp="1597953127405">
+    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup" timestamp="1598010931276">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup/0.23.1440.877@0.23.1440.877" timestamp="1597953127405" />
+    <state x="385" y="112" width="670" height="676" key="search.everywhere.popup/0.23.1440.877@0.23.1440.877" timestamp="1598010931276" />
   </component>
 </project>

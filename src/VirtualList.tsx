@@ -14,7 +14,6 @@ const SCROLL_DEBOUNCE_MS = 300;
 
 // TODO: handle scrollTop negative
 // TODO: comments and description and nuances
-// TODO: look at indexMustBeCalculated
 
 // TODO: heuristic function getEstimatedHeight(item, width) for better layouting
 // TODO: logging system
@@ -68,7 +67,7 @@ interface BuildOffsetsOptions<Item> {
   height: number;
   offset: number;
   lastPositionedIndex: number;
-  indexMustBeCalculated: number;
+  anchorIndex: number | null;
 }
 
 // TODO: proper type, item or index
@@ -94,7 +93,7 @@ interface GetInfoAboutNewItemsParams<Item extends Object> {
 interface StopIndexParams<Item extends Object> {
   items: Item[];
   startIndex: number;
-  indexMustBeCalculated: number;
+  anchorIndex: number | null;
   offset: number;
   height: number;
 }
@@ -203,7 +202,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     height,
     offset,
     lastPositionedIndex,
-    indexMustBeCalculated = 0,
+    anchorIndex,
   }: BuildOffsetsOptions<Item>) => {
     const lastPositionedItem = items[lastPositionedIndex];
 
@@ -237,7 +236,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       } = this.calculateStopIndex({
         items,
         startIndex: newStartIndexToRender,
-        indexMustBeCalculated,
+        anchorIndex,
         offset,
         height,
       });
@@ -262,7 +261,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     } = this.calculateStopIndex({
       items,
       startIndex: lastPositionedIndex,
-      indexMustBeCalculated,
+      anchorIndex,
       offset,
       height,
     });
@@ -359,7 +358,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   calculateStopIndex = ({
     items,
     startIndex,
-    indexMustBeCalculated,
+    anchorIndex,
     offset,
     height,
   }: StopIndexParams<Item>) => {
@@ -393,17 +392,19 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     const stopIndexToRender = stopIndex;
 
-    // if we need to calculate more, e.g. for go to index
-    while (
-      stopIndex < indexMustBeCalculated &&
-      stopIndex < items.length - 1
-    ) {
-      stopIndex++;
-      const curItem = items[stopIndex];
-      this.setItemMetadata(curItem, { offset: curOffset });
-      const curItemMetadata = this.getCorrectedItemMetadata(curItem, stopIndex);
-      curOffset += curItemMetadata.originalHeight;
-      curOffsetCorrected += curItemMetadata.correctedHeight;
+    // if we need to always calculated anchorIndex
+    if (anchorIndex !== null && anchorIndex > stopIndex) {
+      while (stopIndex < anchorIndex && stopIndex < items.length - 1) {
+        stopIndex++;
+        const curItem = items[stopIndex];
+        this.setItemMetadata(curItem, { offset: curOffset });
+        const curItemMetadata = this.getCorrectedItemMetadata(
+          curItem,
+          stopIndex
+        );
+        curOffset += curItemMetadata.originalHeight;
+        curOffsetCorrected += curItemMetadata.correctedHeight;
+      }
     }
 
     return {
@@ -492,8 +493,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { items: prevItems } = this.state;
 
     const { startIndexToRender, stopIndexToRender } = this.state;
-    let indexMustBeCalculated =
-      this.scrollingToIndex === null ? 0 : this.scrollingToIndex;
     const anchorIndexBefore = this.anchorIndex;
 
     let curItems: Item[] = prevItems;
@@ -561,7 +560,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       height,
       offset: this.offset + scrollTopAdjustment,
       lastPositionedIndex: this.lastPositionedIndex,
-      indexMustBeCalculated,
+      anchorIndex: this.anchorIndex,
     });
 
     this.lastPositionedIndex = newLastPositionedIndex;
@@ -695,6 +694,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
 
     this.scrollingToIndex = index; // componentDU knows about it
+    this.anchorIndex = index;
+    this.anchorItem = this.props.items[index] || null;
 
     await this.forceUpdateAsync(); // wait for building new metadata by buildItemsMetadata
 
