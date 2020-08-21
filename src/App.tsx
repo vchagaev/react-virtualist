@@ -13,6 +13,8 @@ const { Text } = Typography;
 const DEFAULT_BATCH_COUNT = 100;
 const DEFAULT_MESSAGE_INDEX = 0;
 
+const debugContainer = document.getElementById('debug-container');
+
 const getMessages = (count = DEFAULT_BATCH_COUNT) => {
   return new Array(count).fill(null).map((_, index) => ({
     index,
@@ -147,7 +149,7 @@ function App() {
               Scroll to random index
             </Button>
             <Divider />
-            <div id="debug-container"></div>
+            <div id="debug-container" />
           </Space>
         </div>
         <div className="chat-messages">
@@ -161,6 +163,7 @@ function App() {
                 height={height}
                 renderRow={renderRowCallback}
                 reversed={true}
+                debugContainer={debugContainer}
               />
             )}
           </AutoSizer>

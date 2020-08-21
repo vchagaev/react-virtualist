@@ -21,8 +21,3 @@
 .chat-messages {
   flex-grow: 1;
 }
-
-.debug-info {
-  display: flex;
-  flex-direction: column;
-}

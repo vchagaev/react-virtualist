@@ -124,7 +124,7 @@ export class OffsetCorrector {
       return heightDelta;
     }
 
-    return 0;
+    return null;
   }
   getLastCorrectedIndex() {
     return this.lastCorrectedIndex;
