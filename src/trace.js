@@ -4,17 +4,13 @@ export function trace(props, state, prevProps, prevState) {
   Object.entries(props).forEach(
     ([key, val]) =>
       prevProps[key] !== val &&
-      reasons.push(
-        `    Prop '${key}' changed. ${prevProps[key]} -> ${val}`
-      )
+      reasons.push(`    Prop '${key}' changed. ${prevProps[key]} -> ${val}`)
   );
   if (state) {
     Object.entries(state).forEach(
       ([key, val]) =>
         prevState[key] !== val &&
-        reasons.push(
-          `    State '${key}' changed. ${prevState[key]} -> ${val}`
-        )
+        reasons.push(`    State '${key}' changed. ${prevState[key]} -> ${val}`)
     );
   }
 

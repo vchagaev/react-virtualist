@@ -12,8 +12,8 @@
   <component name="ChangeListManager">
     <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/OffsetCorrector.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/Corrector.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/trace.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/trace.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -256,7 +256,14 @@
       <option name="project" value="LOCAL" />
       <updated>1598008172063</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="refactor corrector">
+      <created>1598008438344</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1598008438344</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -275,7 +282,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="VIrtualList tweaks" />
     <MESSAGE value="VIrtualList scrollTo start" />
     <MESSAGE value="panel, fix scroll up, scroll to item stable" />
     <MESSAGE value="fixes and refactoring" />
@@ -300,17 +306,18 @@
     <MESSAGE value="fix scrollTo" />
     <MESSAGE value="modularization" />
     <MESSAGE value="better debug design" />
-    <option name="LAST_COMMIT_MESSAGE" value="better debug design" />
+    <MESSAGE value="refactor corrector" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor corrector" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598008171954">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598008438209">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598008171954" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598008243059">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598008438209" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598008591921">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598008243059" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598008591921" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597770245355">
       <screen x="0" y="23" width="1440" height="877" />
     </state>

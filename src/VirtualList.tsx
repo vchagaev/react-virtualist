@@ -14,7 +14,8 @@ const SCROLL_DEBOUNCE_MS = 300;
 
 // TODO: canAdjustScrollTop up and down
 // TODO: handle scrollTop negative
-// TODO: check on mobile
+// TODO: logging system
+// TODO: tests
 
 interface VirtualListProps<Item> {
   height: number;
@@ -274,8 +275,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   onScrollDebounced = debounce(() => {
     this.isScrolling = false;
 
-    console.log("Logger: rerender because isScrolling false");
-
     this.forceUpdate();
   }, SCROLL_DEBOUNCE_MS);
 
@@ -288,8 +287,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.isScrolling = true;
 
     this.onScrollDebounced();
-
-    console.log("Logger: rerender because offset:", this.offset);
 
     this.forceUpdate();
   }, SCROLL_THROTTLE_MS);
@@ -420,10 +417,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
     scrollPromise
       .then((scrollTop) => {
-        console.log("scrollTo finish", scrollTop);
+        console.log("Initial scrollTo finished", scrollTop);
       })
       .catch((error) => {
-        console.error(error);
+        console.error("Initial scrollTo error", error);
       });
   }
 
@@ -468,11 +465,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
   adjustScrollTop = (scrollTopDelta: number) => {
     if (scrollTopDelta && this.containerRef.current) {
-      console.log("Logger: scrollTopDelta adjusting", scrollTopDelta);
-
       this.containerRef.current.scrollTop += scrollTopDelta;
     }
   };
+
+  canAdjustScrollTop = () => !this.isScrolling || this.offset === 0;
 
   componentDidUpdate(
     prevProps: Readonly<VirtualListProps<Item>>,
@@ -490,9 +487,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     let curItems: Item[] = prevItems;
     let scrollTopDeltaByHeightCorrection = 0;
-    const canAdjustScrollTop = !this.isScrolling || this.offset === 0;
 
-    if (canAdjustScrollTop && this.corrector.isInitialized()) {
+    if (this.canAdjustScrollTop() && this.corrector.isInitialized()) {
       this.lastPositionedIndex = this.corrector.getLastCorrectedIndex();
       const correctedHeightsMap = this.corrector.getHeightDeltaMap();
       correctedHeightsMap.forEach((correction, index) => {
@@ -510,7 +506,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
 
     let scrollTopDeltaByAddedNew = 0;
-    if (newItems !== prevItems && canAdjustScrollTop) {
+    if (newItems !== prevItems && this.canAdjustScrollTop()) {
       const {
         newLastPositionedIndex,
         heightAddedBeforeAnchor,
@@ -613,19 +609,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     if (
       this.anchorIndex !== null &&
       index < this.anchorIndex &&
-      this.isScrolling
+      !this.canAdjustScrollTop()
     ) {
       if (!this.corrector.isInitialized()) {
         this.corrector.init(this.lastPositionedIndex, 0);
-        this.corrector.addNewHeightDelta(
-          index,
-          newHeight - originalHeight
-        );
+        this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
       } else if (index <= this.corrector.firstCorrectedIndex) {
-        this.corrector.addNewHeightDelta(
-          index,
-          newHeight - originalHeight
-        );
+        this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
       }
     } else if (this.corrector.getHeightDeltaMap().has(index)) {
       this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
