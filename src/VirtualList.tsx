@@ -5,18 +5,16 @@ import debounce from "lodash-es/debounce";
 import { ItemMeasure } from "./ItemMeasure";
 import { wait } from "./utils";
 import { trace } from "./trace";
-import { OffsetCorrector } from "./OffsetCorrector";
+import { Corrector } from "./Corrector";
 
 const DEFAULT_ESTIMATED_HEIGHT = 50;
 const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
 const SCROLL_DEBOUNCE_MS = 300;
 
+// TODO: canAdjustScrollTop up and down
 // TODO: handle scrollTop negative
-// TODO: refactor OffsetCorrector and rename
-// TODO: count changing arrays
 // TODO: check on mobile
-// TODO: tests
 
 interface VirtualListProps<Item> {
   height: number;
@@ -116,7 +114,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   lastPositionedIndex: number = 0; // for debounce
   scrollingToIndex: number | null = null;
   isScrolling: boolean = false;
-  offsetCorrector: OffsetCorrector = new OffsetCorrector();
+  corrector: Corrector = new Corrector();
   scrollingDirection: ScrollingDirection = ScrollingDirection.down;
 
   ensureItemMetadata = (item: Item) => {
@@ -168,8 +166,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       measured,
     } = this.getItemMetadata(item);
 
-    const offsetDelta = this.offsetCorrector.getOffsetDelta(index);
-    const heightDelta = this.offsetCorrector.getHeightDelta(index);
+    const offsetDelta = this.corrector.getOffsetDelta(index);
+    const heightDelta = this.corrector.getHeightDelta(index);
 
     return {
       index,
@@ -494,9 +492,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     let scrollTopDeltaByHeightCorrection = 0;
     const canAdjustScrollTop = !this.isScrolling || this.offset === 0;
 
-    if (canAdjustScrollTop && this.offsetCorrector.isInitialized()) {
-      this.lastPositionedIndex = this.offsetCorrector.getLastCorrectedIndex();
-      const correctedHeightsMap = this.offsetCorrector.getHeightDeltaMap();
+    if (canAdjustScrollTop && this.corrector.isInitialized()) {
+      this.lastPositionedIndex = this.corrector.getLastCorrectedIndex();
+      const correctedHeightsMap = this.corrector.getHeightDeltaMap();
       correctedHeightsMap.forEach((correction, index) => {
         const { height } = this.getItemMetadata(curItems[index]);
 
@@ -508,7 +506,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         });
       });
 
-      this.offsetCorrector.clear();
+      this.corrector.clear();
     }
 
     let scrollTopDeltaByAddedNew = 0;
@@ -617,20 +615,20 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       index < this.anchorIndex &&
       this.isScrolling
     ) {
-      if (!this.offsetCorrector.isInitialized()) {
-        this.offsetCorrector.init(this.lastPositionedIndex, 0);
-        this.offsetCorrector.addNewHeightDelta(
+      if (!this.corrector.isInitialized()) {
+        this.corrector.init(this.lastPositionedIndex, 0);
+        this.corrector.addNewHeightDelta(
           index,
           newHeight - originalHeight
         );
-      } else if (index <= this.offsetCorrector.firstCorrectedIndex) {
-        this.offsetCorrector.addNewHeightDelta(
+      } else if (index <= this.corrector.firstCorrectedIndex) {
+        this.corrector.addNewHeightDelta(
           index,
           newHeight - originalHeight
         );
       }
-    } else if (this.offsetCorrector.getHeightDeltaMap().has(index)) {
-      this.offsetCorrector.addNewHeightDelta(index, newHeight - originalHeight);
+    } else if (this.corrector.getHeightDeltaMap().has(index)) {
+      this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
     } else {
       this.setItemMetadata(item, { height: newHeight, measured: true });
       this.lastPositionedIndex = Math.min(
