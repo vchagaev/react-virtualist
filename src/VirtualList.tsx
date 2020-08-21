@@ -10,7 +10,7 @@ import { OffsetCorrector } from "./OffsetCorrector";
 const DEFAULT_ESTIMATED_HEIGHT = 50;
 const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
-const SCROLL_DEBOUNCE_MS = 400 * 5;
+const SCROLL_DEBOUNCE_MS = 300;
 
 // TODO: handle scrollTop negative
 // TODO: refactor OffsetCorrector and rename
@@ -375,15 +375,24 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   componentDidMount() {
     const { items, reversed, selectedItem } = this.props;
 
-    this.forceUpdate(() => {
-      if (selectedItem) {
-        this.scrollTo({
-          item: selectedItem,
-        });
-      } else if (reversed) {
-        this.scrollTo({ index: items.length - 1 });
-      }
-    }); // for initial did update
+    let scrollPromise;
+    if (selectedItem) {
+      scrollPromise = this.scrollTo({
+        item: selectedItem,
+      });
+    } else if (reversed) {
+      scrollPromise = this.scrollTo({ index: items.length - 1 });
+    }
+    if (!scrollPromise) {
+      return;
+    }
+    scrollPromise
+      .then((scrollTop) => {
+        console.log("scrollTo finish", scrollTop);
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   }
 
   getInfoAboutNewItems = ({
@@ -574,7 +583,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       delta: newHeight - originalHeight,
     });
 
-    if (this.anchorIndex !== null && index < this.anchorIndex && this.isScrolling) {
+    if (
+      this.anchorIndex !== null &&
+      index < this.anchorIndex &&
+      this.isScrolling
+    ) {
       if (!this.offsetCorrector.isInitialized()) {
         this.offsetCorrector.init(this.lastPositionedIndex, 0);
         this.offsetCorrector.addNewHeightDelta(
@@ -630,8 +643,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   scrollTo = async (params: ScrollToParams<Item>): Promise<number> => {
-    console.log("running scrollTo", params);
-
     if (!params.item && typeof params.index !== "number") {
       this.scrollingToIndex = null;
       throw new Error("Index or item must be specified");
@@ -668,7 +679,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       );
     }
 
-    const { offset: itemOffset } = this.getItemMetadata(itemsProps[index]);
+    const { offset: itemOffset, measured } = this.getItemMetadata(itemsProps[index]);
     const containerHeight = this.getEstimatedTotalHeight(
       itemsProps,
       estimatedItemHeight,
@@ -680,7 +691,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       itemOffset + this.offsetCorrector.getOffsetDelta(index)
     );
 
-    if (this.offset === newOffset) {
+    const isItemMeasured = measured || this.offsetCorrector.getHeightDelta(index);
+    if (isItemMeasured && this.offset === newOffset) {
       this.scrollingToIndex = null;
       return this.offset;
     } else if (retries <= 0) {
@@ -737,7 +749,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
                   opacity:
                     measured || this.offsetCorrector.getHeightDelta(i)
                       ? 1
-                      : 0.1,
+                      : 0,
                   width: "100%",
                   backgroundColor:
                     this.anchorItem === item
