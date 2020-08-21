@@ -14,7 +14,7 @@ const DEFAULT_BATCH_COUNT = 100;
 const DEFAULT_MESSAGE_INDEX = 0;
 
 const getMessages = (count = DEFAULT_BATCH_COUNT) => {
-  return new Array(count).fill(null).map((_, index) => ({
+  return new Array(count).fill(null).map(() => ({
     id: faker.random.uuid(),
     fullName: faker.name.findName(),
     avatarSrc: faker.internet.avatar(),

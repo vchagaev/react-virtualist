@@ -12,7 +12,6 @@ const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
 const SCROLL_DEBOUNCE_MS = 300;
 
-// TODO: handle scrollTop negative
 // TODO: comments and description and nuances
 
 // TODO: heuristic function getEstimatedHeight(item, width) for better layouting
@@ -460,6 +459,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   componentDidMount() {
     const { items, reversed, selectedItem } = this.props;
 
+    const update = () => {
+      this.inited = true;
+      this.callOnScrollHandler();
+      this.forceUpdate();
+    };
+
     let scrollPromise;
     if (selectedItem) {
       scrollPromise = this.scrollTo({
@@ -476,13 +481,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         .catch((error) => {
           console.error("Initial scrollTo error", error);
         })
-        .finally(() => {
-          this.inited = true;
-          this.callOnScrollHandler();
-        });
+        .finally(update);
     } else {
-      this.inited = true;
-      this.callOnScrollHandler();
+      update();
     }
   }
 
@@ -531,7 +532,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
   };
 
-  canAdjustScrollTop = () => !this.isScrolling || this.offset === 0;
+  canAdjustScrollTop = () => {
+    const { estimatedItemHeight } = this.props;
+
+    return !this.isScrolling || this.offset < estimatedItemHeight;
+  };
 
   componentDidUpdate(
     prevProps: Readonly<VirtualListProps<Item>>,
