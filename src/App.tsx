@@ -7,10 +7,11 @@ import "antd/dist/antd.css";
 
 import { VirtualList } from "./VirtualList";
 import { Message, MessageProps } from "./Message";
+import { getRandomMessageContent } from './fake'
 
 const { Text } = Typography;
 
-const DEFAULT_BATCH_COUNT = 100;
+const DEFAULT_BATCH_COUNT = 50;
 const DEFAULT_MESSAGE_INDEX = 0;
 
 const getMessages = (count = DEFAULT_BATCH_COUNT) => {
@@ -18,7 +19,7 @@ const getMessages = (count = DEFAULT_BATCH_COUNT) => {
     id: faker.random.uuid(),
     fullName: faker.name.findName(),
     avatarSrc: faker.internet.avatar(),
-    content: faker.lorem.paragraphs(Math.ceil(Math.random() * 2)),
+    content: getRandomMessageContent(),
     date: faker.date.past(),
   }));
 };
@@ -180,8 +181,8 @@ function App() {
                 reversed={true}
                 debugContainer={debugContainer.current}
                 enabledDebugLayout={true}
-                onScroll={(params) => {
-                  console.log(params);
+                onScroll={(event) => {
+                  console.log(event)
                 }}
               />
             )}

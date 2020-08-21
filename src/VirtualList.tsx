@@ -43,6 +43,7 @@ interface OnScrollEvent<Item> {
   startIndexToRender: number;
   stopIndexToRender: number;
   offset: number;
+  maxPossibleScrollTop: number;
   anchorItem: Item | null;
   anchorIndex: number | null;
   lastPositionedIndex: number;
@@ -312,6 +313,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         startIndexToRender,
         stopIndexToRender,
         offset: this.offset,
+        maxPossibleScrollTop: this.getMaximumPossibleOffset(),
         anchorItem: this.anchorItem,
         anchorIndex: this.anchorIndex,
         lastPositionedIndex: this.lastPositionedIndex,
@@ -667,6 +669,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { height: originalHeight } = this.getItemMetadata(item);
     const newHeight = Math.round(contentRect.height);
 
+    console.log("onResize", {
+      originalHeight,
+      newHeight,
+    });
+
     if (newHeight === originalHeight) {
       return;
     }
@@ -726,7 +733,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   getMaximumPossibleOffset = () => {
     const { height } = this.props;
 
-    if (!this.containerRef) {
+    if (!this.containerRef.current) {
       return 0;
     }
 
@@ -916,6 +923,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
             willChange: "transform",
             position: "absolute",
             bottom: reversed ? 0 : undefined,
+            overflowAnchor: "none",
           }}
           onScroll={this.onScroll}
           ref={this.containerRef}

@@ -10,9 +10,11 @@
     <select />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="be">
+    <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/src/fake.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Message.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/Message.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -291,7 +293,14 @@
       <option name="project" value="LOCAL" />
       <updated>1598014061793</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="better handling of negative offsets">
+      <created>1598015483113</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1598015483113</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -310,7 +319,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="scroll to fixed" />
     <MESSAGE value="better perf, pure components" />
     <MESSAGE value="my measure" />
     <MESSAGE value="pretty" />
@@ -335,17 +343,18 @@
     <MESSAGE value="todos and simple refactoring" />
     <MESSAGE value="get rid of index must be calculated" />
     <MESSAGE value="onScrollHandler" />
-    <option name="LAST_COMMIT_MESSAGE" value="onScrollHandler" />
+    <MESSAGE value="better handling of negative offsets" />
+    <option name="LAST_COMMIT_MESSAGE" value="better handling of negative offsets" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598015446952">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598015483016">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598015446952" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598015456490">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598015483016" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598023763376">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598015456490" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598023763376" />
     <state x="501" y="94" key="RollbackChangesDialog" timestamp="1597770245355">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
