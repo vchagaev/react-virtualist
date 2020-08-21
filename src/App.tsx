@@ -13,18 +13,13 @@ const { Text } = Typography;
 const DEFAULT_BATCH_COUNT = 100;
 const DEFAULT_MESSAGE_INDEX = 0;
 
-const debugContainer = document.getElementById('debug-container');
-
 const getMessages = (count = DEFAULT_BATCH_COUNT) => {
   return new Array(count).fill(null).map((_, index) => ({
-    index,
     id: faker.random.uuid(),
     fullName: faker.name.findName(),
     avatarSrc: faker.internet.avatar(),
     content: faker.lorem.paragraphs(Math.ceil(Math.random() * 2)),
     date: faker.date.past(),
-    offset: "no",
-    height: "no",
   }));
 };
 
@@ -40,12 +35,32 @@ function App() {
   const [messageIndex, setMessageIndex] = useState<number>(
     DEFAULT_MESSAGE_INDEX
   );
+  const debugContainer = useRef<HTMLDivElement>(null);
   const renderRowCallback = useCallback(
-    ({ item: messageData, ref, offset, height }) => (
-      <div ref={ref}>
-        <Message {...messageData} offset={offset} height={height} />
-      </div>
-    ),
+    ({
+      item: messageData,
+      ref,
+      itemMetadata: {
+        index,
+        originalHeight,
+        originalOffset,
+        offsetDelta,
+        heightDelta,
+        correctedOffset,
+        correctedHeight,
+      },
+    }) => {
+      // XXX: for debug purposes only. Lead to a lot of rerenderings
+      const offsetInfo = `${originalOffset} + ${offsetDelta} = ${correctedOffset}`;
+      const heightInfo = `${originalHeight} + ${heightDelta} = ${correctedHeight}`;
+      const fullName = `${index} ${messageData.fullName} (Offset: ${offsetInfo}) (Height: ${heightInfo})`;
+
+      return (
+        <div ref={ref}>
+          <Message {...messageData} fullName={fullName} />
+        </div>
+      );
+    },
     []
   );
 
@@ -149,7 +164,7 @@ function App() {
               Scroll to random index
             </Button>
             <Divider />
-            <div id="debug-container" />
+            <div ref={debugContainer} />
           </Space>
         </div>
         <div className="chat-messages">
@@ -163,7 +178,8 @@ function App() {
                 height={height}
                 renderRow={renderRowCallback}
                 reversed={true}
-                debugContainer={debugContainer}
+                debugContainer={debugContainer.current}
+                enabledDebugLayout={true}
               />
             )}
           </AutoSizer>

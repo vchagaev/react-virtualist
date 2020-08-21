@@ -5,30 +5,25 @@ import React from "react";
 const { Panel } = Collapse;
 
 export interface MessageProps {
-  index: number;
   id: string;
   fullName: string;
   avatarSrc: string;
   content: string;
   date: Date;
-  offset: string;
-  height: string;
 }
 
 export const Message: React.FC<MessageProps> = React.memo(function({
+  id,
   fullName,
   avatarSrc,
   content,
   date,
-  index,
-  offset,
-  height
 }) {
   return (
     <Comment
       author={
-        <a href={`#/${fullName}`}>
-          {index} {fullName} (Offset: {offset}) (Height: {height})
+        <a href={`#/${fullName}/${id}`}>
+          {fullName}
         </a>
       }
       avatar={<Avatar src={avatarSrc} alt={fullName} />}

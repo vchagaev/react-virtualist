@@ -29,7 +29,6 @@ interface VirtualListProps<Item> {
   selectedItem: Item;
   debugContainer?: HTMLElement | null;
   enabledDebugLayout?: boolean;
-  provideDebugInfoForItems?: boolean;
 }
 
 interface VirtualListState<Item> {
@@ -39,6 +38,7 @@ interface VirtualListState<Item> {
 }
 
 interface CorrectedItemMetadata {
+  index: number;
   correctedOffset: number;
   correctedHeight: number;
   correctedMeasured: boolean;
@@ -128,7 +128,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         offset: 0,
         measured: false,
       };
-
       this.itemToMetadata.set(item, meta);
 
       return {
@@ -173,6 +172,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const heightDelta = this.offsetCorrector.getHeightDelta(index);
 
     return {
+      index,
       correctedOffset: originalOffset + offsetDelta,
       correctedHeight:
         originalHeight + (heightDelta === null ? 0 : heightDelta),
@@ -762,10 +762,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
               style.backgroundColor =
                 this.anchorItem === item
                   ? "pink"
-                  : itemMetadata.correctedOffset
+                  : itemMetadata.offsetDelta
                   ? "yellow"
                   : "transparent";
-              style.opacity = style.opacity === 0 ? 0.1 : 0;
+              style.opacity = style.opacity === 0 ? 0.1 : 1;
             }
 
             return (
