@@ -12,8 +12,11 @@ const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
 const SCROLL_DEBOUNCE_MS = 300;
 
-// TODO: canAdjustScrollTop up and down
 // TODO: handle scrollTop negative
+// TODO: comments and description and nuances
+// TODO: look at indexMustBeCalculated
+
+// TODO: heuristic function getEstimatedHeight(item, width) for better layouting
 // TODO: logging system
 // TODO: tests
 
@@ -50,7 +53,7 @@ interface CorrectedItemMetadata {
 
 interface RenderRowProps<Item> {
   item: Item;
-  ref: React.Ref<HTMLDivElement>; // TODO: any dom node
+  ref: React.Ref<HTMLElement>;
   itemMetadata: CorrectedItemMetadata;
 }
 
@@ -86,6 +89,14 @@ interface GetInfoAboutNewItemsParams<Item extends Object> {
   anchorIndex: number | null;
   anchorItem: Item | null;
   lastPositionedIndex: number;
+}
+
+interface StopIndexParams<Item extends Object> {
+  items: Item[];
+  startIndex: number;
+  indexMustBeCalculated: number;
+  offset: number;
+  height: number;
 }
 
 export class VirtualList<Item extends Object> extends React.PureComponent<
@@ -189,6 +200,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
    */
   buildItemsMetadata = ({
     items,
+    height,
     offset,
     lastPositionedIndex,
     indexMustBeCalculated = 0,
@@ -222,12 +234,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       const {
         stopIndexToRender: newStopIndexToRender,
         lastCalculatedIndex,
-      } = this.calculateStopIndex(
+      } = this.calculateStopIndex({
         items,
-        newStartIndexToRender,
+        startIndex: newStartIndexToRender,
         indexMustBeCalculated,
-        offset
-      );
+        offset,
+        height,
+      });
       const newLastPositionedIndex = Math.max(
         lastPositionedIndex,
         lastCalculatedIndex
@@ -246,12 +259,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const {
       stopIndexToRender: newStopIndexToRender,
       lastCalculatedIndex,
-    } = this.calculateStopIndex(
+    } = this.calculateStopIndex({
       items,
-      lastPositionedIndex,
+      startIndex: lastPositionedIndex,
       indexMustBeCalculated,
-      offset
-    );
+      offset,
+      height,
+    });
     const newLastPositionedIndex = Math.max(
       lastPositionedIndex,
       lastCalculatedIndex
@@ -342,14 +356,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }; // for a11y +1 item upper}
   };
 
-  calculateStopIndex = (
-    items: Item[],
-    startIndex: number,
-    indexMustBeCalculated: number,
-    offset: number
-  ) => {
-    const { height } = this.props;
-
+  calculateStopIndex = ({
+    items,
+    startIndex,
+    indexMustBeCalculated,
+    offset,
+    height,
+  }: StopIndexParams<Item>) => {
     const startItem = items[startIndex];
     const itemMetadata = this.getCorrectedItemMetadata(startItem, startIndex);
     const targetOffset = offset + height;
@@ -381,10 +394,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const stopIndexToRender = stopIndex;
 
     // if we need to calculate more, e.g. for go to index
-    // TODO: delete curCorrected < targetOffset it is always true
     while (
-      (curOffsetCorrected < targetOffset ||
-        stopIndex < indexMustBeCalculated) &&
+      stopIndex < indexMustBeCalculated &&
       stopIndex < items.length - 1
     ) {
       stopIndex++;
