@@ -180,6 +180,9 @@ function App() {
                 reversed={true}
                 debugContainer={debugContainer.current}
                 enabledDebugLayout={true}
+                onScroll={(params) => {
+                  console.log(params);
+                }}
               />
             )}
           </AutoSizer>

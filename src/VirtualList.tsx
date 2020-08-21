@@ -30,12 +30,29 @@ interface VirtualListProps<Item> {
   selectedItem: Item;
   debugContainer?: HTMLElement | null;
   enabledDebugLayout?: boolean;
+  onScroll?: (params: OnScrollEvent<Item>) => void;
 }
 
 interface VirtualListState<Item> {
   startIndexToRender: number;
   stopIndexToRender: number;
   items: Item[];
+}
+
+interface OnScrollEvent<Item> {
+  items: Item[];
+  startIndexToRender: number;
+  stopIndexToRender: number;
+  offset: number;
+  anchorItem: Item | null;
+  anchorIndex: number | null;
+  lastPositionedIndex: number;
+  scrollingToIndex: number | null;
+  isScrolling: boolean;
+  scrollingDirection: ScrollingDirection;
+  totalHeight: number;
+  isAtTheBottom: boolean;
+  isAtTheTop: boolean;
 }
 
 interface CorrectedItemMetadata {
@@ -127,6 +144,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   isScrolling: boolean = false;
   corrector: Corrector = new Corrector();
   scrollingDirection: ScrollingDirection = ScrollingDirection.down;
+  inited: boolean = false;
 
   ensureItemMetadata = (item: Item) => {
     const { estimatedItemHeight } = this.props;
@@ -285,8 +303,33 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     };
   };
 
+  callOnScrollHandler = () => {
+    const { onScroll } = this.props;
+    const { items, stopIndexToRender, startIndexToRender } = this.state;
+
+    if (onScroll && this.inited) {
+      onScroll({
+        items,
+        startIndexToRender,
+        stopIndexToRender,
+        offset: this.offset,
+        anchorItem: this.anchorItem,
+        anchorIndex: this.anchorIndex,
+        lastPositionedIndex: this.lastPositionedIndex,
+        scrollingToIndex: this.scrollingToIndex,
+        isScrolling: this.isScrolling,
+        scrollingDirection: this.scrollingDirection,
+        totalHeight: this.getEstimatedTotalHeight(),
+        isAtTheTop: this.offset === 0,
+        isAtTheBottom: this.offset === this.getMaximumPossibleOffset(),
+      });
+    }
+  };
+
   onScrollDebounced = debounce(() => {
     this.isScrolling = false;
+
+    this.callOnScrollHandler();
 
     this.forceUpdate();
   }, SCROLL_DEBOUNCE_MS);
@@ -299,6 +342,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.offset = Math.round(scrollTop);
     this.isScrolling = true;
 
+    this.callOnScrollHandler();
     this.onScrollDebounced();
 
     this.forceUpdate();
@@ -424,16 +468,22 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     } else if (reversed) {
       scrollPromise = this.scrollTo({ index: items.length - 1 });
     }
-    if (!scrollPromise) {
-      return;
+    if (scrollPromise) {
+      scrollPromise
+        .then((scrollTop) => {
+          console.log("Initial scrollTo finished", scrollTop);
+        })
+        .catch((error) => {
+          console.error("Initial scrollTo error", error);
+        })
+        .finally(() => {
+          this.inited = true;
+          this.callOnScrollHandler();
+        });
+    } else {
+      this.inited = true;
+      this.callOnScrollHandler();
     }
-    scrollPromise
-      .then((scrollTop) => {
-        console.log("Initial scrollTo finished", scrollTop);
-      })
-      .catch((error) => {
-        console.error("Initial scrollTo error", error);
-      });
   }
 
   getInfoAboutNewItems = ({
@@ -640,23 +690,22 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.forceUpdateDebounced();
   };
 
-  getEstimatedTotalHeight = (
-    items: Item[],
-    estimatedItemHeight: number,
-    lastPositionedIndex: number
-  ) => {
+  getEstimatedTotalHeight = () => {
+    const { estimatedItemHeight } = this.props;
+    const { items } = this.state;
+
     if (items.length === 0) {
       return 0;
     }
 
     const lastPositionedItemMetadata = this.getItemMetadata(
-      items[lastPositionedIndex]
+      items[this.lastPositionedIndex]
     );
 
     return (
       lastPositionedItemMetadata.offset +
       lastPositionedItemMetadata.height +
-      (items.length - 1 - lastPositionedIndex) * estimatedItemHeight
+      (items.length - 1 - this.lastPositionedIndex) * estimatedItemHeight
     );
   };
 
@@ -667,6 +716,18 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
   getIndexByItem = (item: Item) => {
     return this.props.items.findIndex((i) => i === item);
+  };
+
+  getMaximumPossibleOffset = () => {
+    const { height } = this.props;
+
+    if (!this.containerRef) {
+      return 0;
+    }
+
+    const containerHeight = this.getEstimatedTotalHeight();
+
+    return Math.max(0, containerHeight - height);
   };
 
   scrollTo = async (params: ScrollToParams<Item>): Promise<number> => {
@@ -699,7 +760,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     await this.forceUpdateAsync(); // wait for building new metadata by buildItemsMetadata
 
-    const { items: itemsProps, height, estimatedItemHeight } = this.props;
+    const { items: itemsProps } = this.props;
     const { items: itemsState } = this.state;
 
     if (itemsProps !== itemsState) {
@@ -712,13 +773,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       correctedOffset,
       correctedMeasured,
     } = this.getCorrectedItemMetadata(itemsProps[index], index);
-    const containerHeight = this.getEstimatedTotalHeight(
-      itemsProps,
-      estimatedItemHeight,
-      this.lastPositionedIndex
+    const newOffset = Math.min(
+      this.getMaximumPossibleOffset(),
+      correctedOffset
     );
-    const maxPossibleOffset = Math.max(0, containerHeight - height);
-    const newOffset = Math.min(maxPossibleOffset, correctedOffset);
 
     if (correctedMeasured && this.offset === newOffset) {
       this.scrollingToIndex = null;
@@ -810,6 +868,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
           <span>
             scrollingDirection: {this.scrollingDirection ? "down" : "up"}
           </span>
+          <span>inited: {this.inited ? "true" : "false"}</span>
+          <span>totalHeight: {this.getEstimatedTotalHeight()}</span>
+          <span>isAtTheTop: {this.offset === 0 ? "true" : "false"}</span>
+          <span>
+            isAtTheBottom:{" "}
+            {this.offset === this.getMaximumPossibleOffset() ? "true" : "false"}
+          </span>
         </div>,
         debugContainer
       )
@@ -817,15 +882,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   render() {
-    const { height, width, estimatedItemHeight, reversed } = this.props;
-    const { items } = this.state;
+    const { height, width, reversed } = this.props;
 
-    const estimatedTotalHeight = this.getEstimatedTotalHeight(
-      items,
-      estimatedItemHeight,
-      this.lastPositionedIndex
-    );
-
+    const estimatedTotalHeight = this.getEstimatedTotalHeight();
     const itemsToRender = this.getItemsToRender();
     const debugInfo = this.getDebugInfo();
 
