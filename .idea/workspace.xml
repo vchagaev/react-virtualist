@@ -12,13 +12,7 @@
   <component name="ChangeListManager">
     <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ChatViewer/ChatViewer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ChatViewer/ChatViewer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VirtualList/Corrector.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList/Corrector.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VirtualList/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList/VirtualList.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/yarn.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -345,7 +339,14 @@
       <option name="project" value="LOCAL" />
       <updated>1598122912333</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="comments and pretty">
+      <created>1598127440519</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1598127440519</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -364,7 +365,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="fix" />
     <MESSAGE value="before refactoring" />
     <MESSAGE value="debug info and clear" />
     <MESSAGE value="anchor working" />
@@ -389,13 +389,14 @@
     <MESSAGE value="a lot of different fixes and better handling new array" />
     <MESSAGE value="fix scrolling and deleting anchor" />
     <MESSAGE value="better structure" />
-    <option name="LAST_COMMIT_MESSAGE" value="better structure" />
+    <MESSAGE value="comments and pretty" />
+    <option name="LAST_COMMIT_MESSAGE" value="comments and pretty" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598122912204">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598127440377">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598122912204" />
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598127440377" />
     <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598127309309">
       <screen x="0" y="23" width="1440" height="877" />
     </state>

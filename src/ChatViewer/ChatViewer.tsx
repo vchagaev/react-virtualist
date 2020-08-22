@@ -160,15 +160,15 @@ export class ChatViewer extends React.PureComponent<
       return;
     }
 
-    const itemsForList: VirtualListItem[] = [];
+    let itemsForList: VirtualListItem[] = [];
     if (hasItems && (hasOlder || olderIsLoading)) {
       itemsForList.push({
         id: `older-placeholder#${messages[0].id}`, // unique id because we don't want to anchor them
         typename: Typename.placeholder,
       });
     }
-    itemsForList.push(
-      ...messages.map((message) => ({
+    itemsForList = itemsForList.concat(
+      messages.map((message) => ({
         ...message,
         typename: Typename.messgage,
       }))
