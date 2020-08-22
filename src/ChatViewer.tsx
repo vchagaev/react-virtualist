@@ -61,10 +61,8 @@ export class ChatViewer extends React.PureComponent<
 
     if (this.virtualListRef && this.virtualListRef.current) {
       return this.virtualListRef.current.scrollTo({
-        item: {
-          ...messages[index],
-          typename: Typename.messgage,
-        },
+        ...messages[index],
+        typename: Typename.messgage,
       });
     }
   };
@@ -208,7 +206,7 @@ export class ChatViewer extends React.PureComponent<
             width={width}
             height={height}
             renderRow={this.renderItem}
-            reversed={true}
+            // reversed={true}
             enabledDebugLayout={true}
             onScroll={this.onScroll}
           />

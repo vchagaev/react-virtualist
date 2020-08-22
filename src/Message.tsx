@@ -38,6 +38,7 @@ export const Message: React.FC<MessageProps> = React.memo(function ({
       content={
         <>
           <p>{newContent || content}</p>
+          {id}
         </>
       }
       datetime={<span>{moment(date).calendar()}</span>}

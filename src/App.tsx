@@ -47,12 +47,13 @@ function App() {
 
   const onNewerMessageRequest = useCallback(async (item) => {
     console.log("give me newer", item);
-    await wait(3 * 1000);
+    await wait(10 * 1000);
     setMessages([...messages, ...getMessages({ min: 25, max: 25 })]);
   }, [messages, setMessages]);
   const onOlderMessageRequest = useCallback(
     async (item) => {
-      await wait(3 * 1000);
+      console.log("give me older", item);
+      await wait(10 * 1000);
       setMessages([...getMessages({ min: 25, max: 25 }), ...messages]);
     },
     [messages, setMessages]
