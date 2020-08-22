@@ -2,10 +2,19 @@ import React from "react";
 import { Skeleton } from "antd";
 import AutoSizer from "react-virtualized-auto-sizer";
 
-import { OnScrollEvent, RenderRowProps, VirtualList } from "../VirtualList/VirtualList";
+import {
+  OnScrollEvent,
+  RenderRowProps,
+  VirtualList,
+} from "../VirtualList/VirtualList";
 import { Message, MessageProps } from "./Message";
 
 const DEBUG_MODE = false;
+
+/**
+ * ChatViewer is responsible for detecting the need for more items if they exist. Only for each direction at the time.
+ * It also is responsible for adding ServiceItem (e.g. placeholders/indicators)
+ */
 
 interface ChatViewerProps {
   id: string;
@@ -143,9 +152,13 @@ export class ChatViewer extends React.PureComponent<
   };
 
   render() {
-    const { hasOlder, messages, hasNewer } = this.props;
+    const { hasOlder, messages, hasNewer, selectedMessage } = this.props;
     const { olderIsLoading, newerIsLoading } = this.state;
     const hasItems = messages.length > 0;
+
+    if (!hasItems) {
+      return;
+    }
 
     const itemsForList: VirtualListItem[] = [];
     if (hasItems && (hasOlder || olderIsLoading)) {
@@ -166,6 +179,10 @@ export class ChatViewer extends React.PureComponent<
         typename: Typename.placeholder,
       });
     }
+    let selectedMessageListItem = selectedMessage && {
+      ...selectedMessage,
+      typename: Typename.messgage,
+    };
 
     return (
       <AutoSizer>
@@ -177,6 +194,7 @@ export class ChatViewer extends React.PureComponent<
             width={width}
             height={height}
             renderRow={this.renderItem}
+            selectedItem={selectedMessageListItem}
             reversed={true}
             debug={DEBUG_MODE}
             onScroll={this.onScroll}

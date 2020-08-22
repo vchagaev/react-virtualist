@@ -1,8 +1,12 @@
+/**
+ * This class is responsible for maintaining corrected offsets.
+ * There is one important assumption here is that item indexes are stable during usage to properly.
+ */
 export class Corrector {
   indexToOffsetDeltaMap: Map<number, number>;
   indexToHeightDeltaMap: Map<number, number>;
-  lastCorrectedIndex: number;
-  firstCorrectedIndex: number;
+  lastCorrectedIndex: number; // is closer to the 0
+  firstCorrectedIndex: number; // is higher than lastCorrectedIndex. Since this index corrections start
 
   constructor() {
     this.indexToOffsetDeltaMap = new Map<number, number>();
@@ -53,6 +57,7 @@ export class Corrector {
     this.indexToHeightDeltaMap.set(index, heightDelta);
 
     if (index < this.lastCorrectedIndex) {
+      // just move corrected offset from lastCorrectedIndex
       let curCorrection = this.indexToOffsetDeltaMap.get(
         this.lastCorrectedIndex
       )!;
@@ -64,15 +69,13 @@ export class Corrector {
       this.indexToOffsetDeltaMap.set(index, curCorrection - realHeightDelta);
       this.lastCorrectedIndex = index;
     } else {
+      // change corrected offsets for all items that are upper index
       for (let i = index; i >= this.lastCorrectedIndex; i--) {
         let curCorrection = this.indexToOffsetDeltaMap.get(i)!;
 
         this.indexToOffsetDeltaMap.set(i, curCorrection - realHeightDelta);
       }
     }
-  }
-  getHeightDeltaMap() {
-    return this.indexToHeightDeltaMap;
   }
   getOffsetDelta(index: number) {
     const offsetDelta = this.indexToOffsetDeltaMap.get(index);
@@ -81,6 +84,7 @@ export class Corrector {
       return offsetDelta;
     }
 
+    // there is not corrections for such indexes
     if (index > this.firstCorrectedIndex) {
       return 0;
     }
@@ -89,6 +93,7 @@ export class Corrector {
       this.lastCorrectedIndex
     );
 
+    // indexes lower than lastCorrectedIndex have the same correction as lastCorrectedIndex
     return typeof lastOffsetDelta === "number" ? lastOffsetDelta : 0;
   }
   getHeightDelta(index: number) {
@@ -99,8 +104,5 @@ export class Corrector {
     }
 
     return null;
-  }
-  getLastCorrectedIndex() {
-    return this.lastCorrectedIndex;
   }
 }

@@ -12,8 +12,9 @@ const { Text } = Typography;
 const API_DELAY = 2 * 1000;
 const DEFAULT_BATCH_COUNT = 50;
 const DEFAULT_MESSAGE_INDEX = 0;
-
 const MAX_BATCH_COUNT = 100000;
+
+// Mocked client-server interactions
 
 function App() {
   const chatViewerRef = useRef<ChatViewer>(null);
@@ -155,6 +156,7 @@ function App() {
             id="chat-id"
             ref={chatViewerRef}
             messages={messages}
+            selectedMessage={messages[Math.floor(messages.length / 2)]}
             hasNewer={true}
             hasOlder={true}
             onNewerMessageRequest={onNewerMessageRequest}

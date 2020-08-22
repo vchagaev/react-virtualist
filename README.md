@@ -1,5 +1,8 @@
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+To enable debug mode use DEBUG_MODE variable in ChatViewer.tsx
+There are useful comments in code.
+
 ## Available Scripts
 
 In the project directory, you can run:

@@ -12,23 +12,37 @@ const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
 const SCROLL_DEBOUNCE_MS = 300;
 
-// TODO: comments and description and nuances
-
 // TODO: supprot heuristic function getEstimatedHeight(item, width) for better layouting
 // TODO: logging system
 // TODO: tests
+
+/**
+ * VirtualList can virtualize huge lists with dynamic height.
+ * It anchors to the top element in the current view. It uses ResizeObserver for detecting changes in heights.
+ * Inspired by react-window.
+ *
+ * There are some caveats except described below. Items from props may be applied with delay.
+ * They are applied only when scroll is idle. This is the limitation of the correction technique that is used here.
+ * This technique relies on consistent indexes to calculate corrected offsets.
+ * scrollTo - is async function because we measure items on the fly.
+ *
+ * Related issues and discussions:
+ * - https://github.com/bvaughn/react-window/issues/6
+ * - https://github.com/bvaughn/react-virtualized/issues/610#issuecomment-324890558
+ *
+ */
 
 interface VirtualListProps<Item> {
   height: number;
   width: number;
   getItemKey: (item: Item) => string;
-  estimatedItemHeight: number;
+  approximateItemHeight: number;
   renderRow: (renderRowProps: RenderRowProps<Item>) => React.ReactNode;
-  reversed: boolean;
+  reversed: boolean; // if the list is stick to the bottom
   items: Item[];
   selectedItem: Item;
   debug?: boolean;
-  onScroll?: (params: OnScrollEvent<Item>) => void;
+  onScroll?: (params: OnScrollEvent<Item>) => void; // fire on scroll only on meaningful scrolls
 }
 
 interface VirtualListState<Item> {
@@ -71,7 +85,7 @@ interface CorrectedItemMetadata {
 
 export interface RenderRowProps<Item> {
   item: Item;
-  ref: React.Ref<HTMLDivElement>; // TODO: Generic Element
+  ref: React.Ref<HTMLDivElement>;
   itemMetadata: CorrectedItemMetadata;
 }
 
@@ -98,7 +112,6 @@ enum ScrollingDirection {
 interface GetInfoAboutNewItemsParams<Item extends Object> {
   prevItems: Item[];
   newItems: Item[];
-  anchorIndex: number | null;
   anchorItem: Item | null;
   lastPositionedIndex: number;
 }
@@ -116,7 +129,7 @@ interface EstimatedTotalHeightParams<Item extends Object> {
   lastPositionedItem: Item;
   lastPositionedIndex: number;
   itemsCount: number;
-  estimatedItemHeight: number;
+  approximateItemHeight: number;
 }
 
 export class VirtualList<Item extends Object> extends React.PureComponent<
@@ -124,7 +137,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   VirtualListState<Item>
 > {
   static defaultProps = {
-    estimatedItemHeight: DEFAULT_ESTIMATED_HEIGHT,
+    approximateItemHeight: DEFAULT_ESTIMATED_HEIGHT,
     reversed: false,
     selectedItem: null,
   };
@@ -140,11 +153,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     string,
     ItemMetadata
   >();
-  offset: number = 0;
+  offset: number = 0; // scrollTop of the container
   anchorItem: Item | null = null;
   anchorIndex: number | null = null;
   containerRef = React.createRef<HTMLDivElement>();
-  lastPositionedIndex: number = 0; // for debounce
+  // for this index and all indexes below we know offsets. Also we know heights but some of them might be not measured yet
+  lastPositionedIndex: number = 0;
   scrollingToItem: Item | null = null;
   scrollingToIndex: number | null = null;
   isScrolling: boolean = false;
@@ -155,11 +169,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   isAtTheBottom: boolean = false;
 
   ensureItemMetadata = (itemKey: string) => {
-    const { estimatedItemHeight } = this.props;
+    const { approximateItemHeight } = this.props;
 
     if (!this.itemKeyToMetadata.has(itemKey)) {
       const meta = {
-        height: estimatedItemHeight,
+        height: approximateItemHeight,
         offset: 0,
         measured: false,
       };
@@ -227,7 +241,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   /**
-   * Build offsets for current view or needed index
+   * Build offsets for current view, needed index and anchorIndex and get new state values
    */
   buildItemsMetadata = ({
     items,
@@ -256,7 +270,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       lastPositionedIndex >= items.length - 1 ||
       lastPositionedItemMetadata.offset > offset
     ) {
-      // get start and calculate end
+      // we've already built layout for this offset and we can get startIndex
       const {
         startIndexToRender: newStartIndexToRender,
         anchorItem: newAnchorItem,
@@ -288,7 +302,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       };
     }
 
-    // get calculate start and end since lastPositionedIndex
+    // We don't know layout for requested offset and have to build it. We can start from lastPositionedIndex
     const {
       stopIndexToRender: newStopIndexToRender,
       lastCalculatedIndex,
@@ -340,6 +354,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       this.inited &&
       this.scrollingToItem === null
     ) {
+      // don't call onScroll while scrolling to item or during initialization
       onScroll({
         isAtTheTop: this.isAtTheTop,
         isAtTheBottom: this.isAtTheBottom,
@@ -432,8 +447,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return {
       anchorIndex: nearestIndex,
       anchorItem: items[nearestIndex],
-      startIndexToRender: Math.max(0, nearestIndex - 1),
-    }; // for a11y +1 item upper}
+      startIndexToRender: Math.max(0, nearestIndex - 1), // for a11y +1 item upper
+    };
   };
 
   calculateStopIndex = ({
@@ -448,6 +463,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const itemMetadata = this.getCorrectedItemMetadata(startItem, startIndex);
     const targetOffset = offset + height;
 
+    // TRICKY: During calculation we calculate offsets with corrections but we set original offsets
     let curOffsetCorrected =
       itemMetadata.correctedOffset + itemMetadata.correctedHeight;
     let curOffset = itemMetadata.originalOffset + itemMetadata.originalHeight;
@@ -478,7 +494,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       calculateUntil = anchorIndex;
     }
 
-    // we have to always calculate anchorIndex
+    // we have to always calculate anchorIndex or indexMustBeCalculated
     if (calculateUntil > stopIndex) {
       while (stopIndex < calculateUntil && stopIndex < items.length - 1) {
         stopIndex++;
@@ -502,7 +518,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   componentDidMount() {
     const { items, reversed, selectedItem } = this.props;
 
-    const markAsInited = () => {
+    const markAsInitedAndCallHandler = () => {
       this.inited = true;
       this.callOnScrollHandler();
       this.forceUpdate();
@@ -522,9 +538,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         .catch((error) => {
           console.error("Initial scrollTo error", error);
         })
-        .finally(markAsInited);
+        .finally(markAsInitedAndCallHandler);
     } else {
-      markAsInited();
+      markAsInitedAndCallHandler();
     }
   }
 
@@ -532,7 +548,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     prevItems,
     newItems,
     anchorItem,
-    anchorIndex,
     lastPositionedIndex,
   }: GetInfoAboutNewItemsParams<Item>) => {
     const { getItemKey } = this.props;
@@ -549,15 +564,18 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         (!prevItems[i] || newItemKey !== getItemKey(prevItems[i])) &&
         i <= newLastPositionedIndex
       ) {
+        // until what index items were not changed
         newLastPositionedIndex = Math.max(0, i - 1);
       }
 
       if (anchorItem && newItemKey === getItemKey(anchorItem)) {
+        // found our anchor in new items
         newAnchorIndex = i;
         newAnchorItem = newItem;
         break;
       }
 
+      // to keep positions after prepend we have to calculate newly added items heights
       const { created, meta } = this.ensureItemMetadata(newItemKey);
       if (created) {
         heightAddedBeforeAnchor += meta.height;
@@ -565,6 +583,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
 
     return {
+      // if there is no anchor in new list then we reset lastPositionedIndex
       newLastPositionedIndex: Math.min(
         newLastPositionedIndex,
         newAnchorIndex === null ? 0 : newAnchorIndex
@@ -575,6 +594,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     };
   };
 
+  /**
+   * Can be applied only on idle to make scrolling smooth
+   */
   adjustScrollTop = (scrollTopDelta: number) => {
     if (scrollTopDelta && this.containerRef.current) {
       console.log("adjustScrollTop", scrollTopDelta);
@@ -582,10 +604,17 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
   };
 
+  /**
+   *
+   */
   canAdjustScrollTop = () => {
-    const { estimatedItemHeight } = this.props;
+    const { approximateItemHeight } = this.props;
 
-    return !this.isScrolling || this.offset < estimatedItemHeight;
+    return (
+      !this.isScrolling ||
+      this.offset < approximateItemHeight ||
+      this.getMaximumPossibleOffset() - this.offset < approximateItemHeight
+    );
   };
 
   componentDidUpdate(
@@ -595,9 +624,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const {
       items: newItems,
       height,
-      estimatedItemHeight,
+      approximateItemHeight,
       debug,
     } = this.props;
+
     const {
       items: prevItems,
       estimatedTotalHeight,
@@ -630,8 +660,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
 
     if (this.canAdjustScrollTop() && this.corrector.isInitialized()) {
-      this.lastPositionedIndex = this.corrector.getLastCorrectedIndex();
-      const correctedHeightsMap = this.corrector.getHeightDeltaMap();
+      // if we used corrector and now can adjust scrollTop
+      this.lastPositionedIndex = this.corrector.lastCorrectedIndex;
+      const correctedHeightsMap = this.corrector.indexToHeightDeltaMap;
+      // apply measured heights during corrected phase
       correctedHeightsMap.forEach((correction, index) => {
         const { height } = this.getItemMetadata(curItems[index]);
         this.setItemMetadata(curItems[index], {
@@ -644,6 +676,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     let heightAddedBeforeAnchorWithNewItems = 0;
     if (newItems !== prevItems && this.canAdjustScrollTop()) {
+      // items were changed during scrolling. Now we can apply new items
       const {
         newLastPositionedIndex,
         newAnchorIndex,
@@ -653,7 +686,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         prevItems,
         newItems,
         anchorItem: this.anchorItem,
-        anchorIndex: this.anchorIndex,
         lastPositionedIndex: this.lastPositionedIndex,
       });
 
@@ -695,6 +727,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       this.anchorItem === null &&
       heightAddedBeforeAnchorWithNewItems
     ) {
+      // in case anchor was removed
       scrollTopAdjustment =
         heightAddedBeforeAnchorWithNewItems -
         this.getItemMetadata(anchorItemBefore).height;
@@ -703,10 +736,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       anchorOffsetAfter !== null &&
       anchorOffsetBefore - anchorOffsetAfter !== 0
     ) {
+      // anchor offset was changed
       scrollTopAdjustment = anchorOffsetAfter - anchorOffsetBefore;
     }
 
-    if (scrollTopAdjustment && this.canAdjustScrollTop()) {
+    if (scrollTopAdjustment) {
+      // we know future adjustment and calculate newState ahead of time
       newState = this.buildItemsMetadata({
         items: curItems,
         height,
@@ -723,7 +758,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const newEstimatedTotalHeight = this.getEstimatedTotalHeight({
       lastPositionedIndex: this.lastPositionedIndex,
       lastPositionedItem: curItems[this.lastPositionedIndex],
-      estimatedItemHeight,
+      approximateItemHeight,
       itemsCount: curItems.length,
     });
 
@@ -781,13 +816,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       index < this.anchorIndex &&
       !this.canAdjustScrollTop()
     ) {
+      // there are changes in heights upper than our anchor and we can't adjust scrollTop at the moment
       if (!this.corrector.isInitialized()) {
-        this.corrector.init(this.lastPositionedIndex, 0);
+        this.corrector.init(this.lastPositionedIndex, 0); // for this position there is no corrections
         this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
       } else if (index <= this.corrector.firstCorrectedIndex) {
         this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
       }
-    } else if (this.corrector.getHeightDeltaMap().has(index)) {
+    } else if (this.corrector.indexToHeightDeltaMap.has(index)) {
       this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
     } else {
       this.setItemMetadata(item, { height: newHeight, measured: true });
@@ -804,7 +840,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     lastPositionedItem,
     lastPositionedIndex,
     itemsCount,
-    estimatedItemHeight,
+    approximateItemHeight,
   }: EstimatedTotalHeightParams<Item>) => {
     if (itemsCount === 0) {
       return 0;
@@ -818,7 +854,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return (
       lastPositionedItemMetadata.correctedOffset +
       lastPositionedItemMetadata.correctedHeight +
-      (itemsCount - 1 - this.lastPositionedIndex) * estimatedItemHeight
+      (itemsCount - 1 - this.lastPositionedIndex) * approximateItemHeight
     );
   };
 

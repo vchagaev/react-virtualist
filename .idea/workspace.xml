@@ -11,16 +11,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/src/VirtualList/Corrector.ts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ChatViewer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ChatViewer/ChatViewer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Corrector.ts" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ItemMeasure.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList/ItemMeasure.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Message.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ChatViewer/Message.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList/VirtualList.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/fake.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/fake.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/trace.js" beforeDir="false" afterPath="$PROJECT_DIR$/src/ChatViewer/traceDU.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/ChatViewer/ChatViewer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ChatViewer/ChatViewer.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VirtualList/Corrector.ts" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList/Corrector.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/VirtualList/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList/VirtualList.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/yarn.lock" beforeDir="false" afterPath="$PROJECT_DIR$/yarn.lock" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -340,7 +338,14 @@
       <option name="project" value="LOCAL" />
       <updated>1598118855525</updated>
     </task>
-    <option name="localTasksCounter" value="39" />
+    <task id="LOCAL-00039" summary="better structure">
+      <created>1598122912333</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1598122912333</updated>
+    </task>
+    <option name="localTasksCounter" value="40" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -359,7 +364,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="clear" />
     <MESSAGE value="fix" />
     <MESSAGE value="before refactoring" />
     <MESSAGE value="debug info and clear" />
@@ -384,17 +388,18 @@
     <MESSAGE value="tested infinite loader" />
     <MESSAGE value="a lot of different fixes and better handling new array" />
     <MESSAGE value="fix scrolling and deleting anchor" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix scrolling and deleting anchor" />
+    <MESSAGE value="better structure" />
+    <option name="LAST_COMMIT_MESSAGE" value="better structure" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598118855420">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598122912204">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598118855420" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598121098572">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598122912204" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598127309309">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598121098572" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598127309309" />
     <state x="0" y="23" key="FileDocumentManager.FileCacheConflict" timestamp="1598093021122">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
@@ -415,10 +420,10 @@
       <screen x="0" y="23" width="1440" height="877" />
     </state>
     <state x="320" y="197" key="Vcs.Push.Dialog.v2/0.23.1440.877@0.23.1440.877" timestamp="1597518674406" />
-    <state x="419" y="200" width="602" height="522" key="find.popup" timestamp="1598122451156">
+    <state x="419" y="200" width="602" height="522" key="find.popup" timestamp="1598123190867">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="419" y="200" width="602" height="522" key="find.popup/0.23.1440.877@0.23.1440.877" timestamp="1598122451156" />
+    <state x="419" y="200" width="602" height="522" key="find.popup/0.23.1440.877@0.23.1440.877" timestamp="1598123190867" />
     <state x="385" y="211" key="run.anything.popup" timestamp="1597948200566">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
