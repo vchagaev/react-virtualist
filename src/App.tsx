@@ -1,20 +1,26 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import faker from "faker";
-import AutoSizer from "react-virtualized-auto-sizer";
 import { Button, Space, InputNumber, Typography, Divider } from "antd";
 import "./App.css";
 import "antd/dist/antd.css";
 
-import { VirtualList } from "./VirtualList";
-import { Message, MessageProps } from "./Message";
-import { getRandomMessageContent } from './fake'
+import { getRandomMessageContent } from "./fake";
+import { getRandomInt, wait } from "./utils";
+import { ChatViewer } from "./ChatViewer";
 
 const { Text } = Typography;
 
 const DEFAULT_BATCH_COUNT = 50;
 const DEFAULT_MESSAGE_INDEX = 0;
 
-const getMessages = (count = DEFAULT_BATCH_COUNT) => {
+interface GetMessagesParams {
+  min: number;
+  max: number;
+}
+
+const getMessages = ({ min, max }: GetMessagesParams) => {
+  const count = getRandomInt(min, max);
+
   return new Array(count).fill(null).map(() => ({
     id: faker.random.uuid(),
     fullName: faker.name.findName(),
@@ -25,10 +31,9 @@ const getMessages = (count = DEFAULT_BATCH_COUNT) => {
 };
 
 function App() {
-  const virtualListRef = useRef<VirtualList<MessageProps>>(null);
-  const getItemKey = useCallback(({ id }) => id, []);
+  const chatViewerRef = useRef<ChatViewer>(null);
   const [messages, setMessages] = useState(() => {
-    return getMessages();
+    return getMessages({ min: DEFAULT_BATCH_COUNT, max: DEFAULT_BATCH_COUNT });
   });
   const [messagesBatchCount, setMessagesBatchCount] = useState<number>(
     DEFAULT_BATCH_COUNT
@@ -36,34 +41,38 @@ function App() {
   const [messageIndex, setMessageIndex] = useState<number>(
     DEFAULT_MESSAGE_INDEX
   );
-  const debugContainer = useRef<HTMLDivElement>(null);
-  const renderRowCallback = useCallback(
-    ({
-      item: messageData,
-      ref,
-      itemMetadata: {
-        index,
-        originalHeight,
-        originalOffset,
-        offsetDelta,
-        heightDelta,
-        correctedOffset,
-        correctedHeight,
-      },
-    }) => {
-      // XXX: for debug purposes only. Lead to a lot of rerenderings
-      const offsetInfo = `${originalOffset} + ${offsetDelta} = ${correctedOffset}`;
-      const heightInfo = `${originalHeight} + ${heightDelta} = ${correctedHeight}`;
-      const fullName = `${index} ${messageData.fullName} (Offset: ${offsetInfo}) (Height: ${heightInfo})`;
 
-      return (
-        <div ref={ref}>
-          <Message {...messageData} fullName={fullName} />
-        </div>
-      );
+  const [hasNewer, setHasNewer] = useState<boolean>(true);
+  const [hasOlder, setHasOlder] = useState<boolean>(true);
+
+  const onNewerMessageRequest = useCallback(async (item) => {
+    console.log("give me newer", item);
+    await wait(3 * 1000);
+    setMessages([...messages, ...getMessages({ min: 25, max: 25 })]);
+  }, [messages, setMessages]);
+  const onOlderMessageRequest = useCallback(
+    async (item) => {
+      await wait(3 * 1000);
+      setMessages([...getMessages({ min: 25, max: 25 }), ...messages]);
     },
-    []
+    [messages, setMessages]
   );
+
+  // useEffect(() => {
+  //   const intervalId = setInterval(() => {
+  //     setMessages([...messages, ...getMessages({ min: 0, max: 2 })]);
+  //   }, 5 * 1000);
+  //
+  //   return () => {
+  //     clearInterval(intervalId);
+  //   };
+  // }, [messages, setMessages, chatViewerRef.current]);
+
+  // useEffect(() => {
+  //   if (chatViewerRef.current && chatViewerRef.current.isAtTheBottom) {
+  //     chatViewerRef.current.scrollTo({ index: messages.length - 1 });
+  //   }
+  // }, [chatViewerRef.current, messages]);
 
   return (
     <div className="app">
@@ -88,7 +97,10 @@ function App() {
               block={true}
               onClick={() => {
                 const newMessages = [
-                  ...getMessages(messagesBatchCount),
+                  ...getMessages({
+                    min: messagesBatchCount,
+                    max: messagesBatchCount,
+                  }),
                   ...messages,
                 ];
                 setMessages(newMessages);
@@ -102,7 +114,10 @@ function App() {
               onClick={() => {
                 const newMessages = [
                   ...messages,
-                  ...getMessages(messagesBatchCount),
+                  ...getMessages({
+                    min: messagesBatchCount,
+                    max: messagesBatchCount,
+                  }),
                 ];
                 setMessages(newMessages);
               }}
@@ -129,9 +144,9 @@ function App() {
             <Button
               block={true}
               onClick={() => {
-                if (virtualListRef.current) {
-                  virtualListRef.current
-                    .scrollTo({ index: messageIndex })
+                if (chatViewerRef.current) {
+                  chatViewerRef.current
+                    .scrollTo(messageIndex)
                     .then(() => {
                       console.log("scrolled");
                     })
@@ -147,11 +162,9 @@ function App() {
             <Button
               block={true}
               onClick={() => {
-                if (virtualListRef.current) {
-                  virtualListRef.current
-                    .scrollTo({
-                      index: Math.round(Math.random() * messages.length),
-                    })
+                if (chatViewerRef.current) {
+                  chatViewerRef.current
+                    .scrollTo(Math.round(Math.random() * messages.length))
                     .then(() => {
                       console.log("scrolled");
                     })
@@ -165,28 +178,18 @@ function App() {
               Scroll to random index
             </Button>
             <Divider />
-            <div ref={debugContainer} />
           </Space>
         </div>
         <div className="chat-messages">
-          <AutoSizer>
-            {({ height, width }) => (
-              <VirtualList<MessageProps>
-                ref={virtualListRef}
-                items={messages}
-                getItemKey={getItemKey}
-                width={width}
-                height={height}
-                renderRow={renderRowCallback}
-                reversed={true}
-                debugContainer={debugContainer.current}
-                enabledDebugLayout={true}
-                onScroll={(event) => {
-                  console.log(event)
-                }}
-              />
-            )}
-          </AutoSizer>
+          <ChatViewer
+            id="chat-id"
+            ref={chatViewerRef}
+            messages={messages}
+            hasNewer={hasNewer}
+            hasOlder={hasOlder}
+            onNewerMessageRequest={onNewerMessageRequest}
+            onOlderMessageRequest={onOlderMessageRequest}
+          />
         </div>
       </div>
     </div>
