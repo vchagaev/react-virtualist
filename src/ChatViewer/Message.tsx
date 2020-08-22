@@ -1,7 +1,8 @@
 import { Avatar, Comment, Button } from "antd";
 import moment from "moment";
 import React, { useState } from "react";
-import { getRandomMessageContent } from "./fake";
+
+import { getRandomMessageContent } from "../fake";
 
 export interface MessageProps {
   id: string;

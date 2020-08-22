@@ -1,9 +1,10 @@
 import React, { CSSProperties, UIEvent } from "react";
 import throttle from "lodash-es/throttle";
 import debounce from "lodash-es/debounce";
+
 import { ItemMeasure } from "./ItemMeasure";
-import { wait } from "./utils";
-import { trace } from "./trace";
+import { wait } from "../utils";
+import { traceDU } from "../ChatViewer/traceDU";
 import { Corrector } from "./Corrector";
 
 const DEFAULT_ESTIMATED_HEIGHT = 100;
@@ -26,7 +27,7 @@ interface VirtualListProps<Item> {
   reversed: boolean;
   items: Item[];
   selectedItem: Item;
-  enabledDebugLayout?: boolean;
+  debug?: boolean;
   onScroll?: (params: OnScrollEvent<Item>) => void;
 }
 
@@ -539,10 +540,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     let newAnchorIndex = null;
     let newAnchorItem = null;
     let heightAddedBeforeAnchor = 0;
-    // in case our anchor item is removed then try acnhor next one
-    let fallbackAnchorIndex = anchorIndex !== null ? anchorIndex + 1 : null;
-    let fallbackAnchorItem =
-      (fallbackAnchorIndex && prevItems[fallbackAnchorIndex]) || null;
 
     for (let i = 0; i < newItems.length; i++) {
       const newItem = newItems[i];
@@ -579,9 +576,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   adjustScrollTop = (scrollTopDelta: number) => {
-    console.log("adjustScrollTop", scrollTopDelta);
-
     if (scrollTopDelta && this.containerRef.current) {
+      console.log("adjustScrollTop", scrollTopDelta);
       this.containerRef.current.scrollTop += scrollTopDelta;
     }
   };
@@ -596,15 +592,22 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     prevProps: Readonly<VirtualListProps<Item>>,
     prevState: Readonly<VirtualListState<Item>>
   ): void {
-    trace(this.props, this.state, prevProps, prevState);
-
-    const { items: newItems, height, estimatedItemHeight } = this.props;
+    const {
+      items: newItems,
+      height,
+      estimatedItemHeight,
+      debug,
+    } = this.props;
     const {
       items: prevItems,
       estimatedTotalHeight,
       startIndexToRender,
       stopIndexToRender,
     } = this.state;
+
+    if (debug) {
+      traceDU(this.props, this.state, prevProps, prevState);
+    }
 
     let curItems: Item[] = prevItems;
     const indexMustBeCalculated =
@@ -931,7 +934,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   getItemsToRender = () => {
-    const { renderRow, getItemKey, enabledDebugLayout } = this.props;
+    const { renderRow, getItemKey, debug } = this.props;
     const { items, startIndexToRender, stopIndexToRender } = this.state;
 
     const itemsToRender = [];
@@ -953,7 +956,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
               width: "100%",
             };
 
-            if (enabledDebugLayout) {
+            if (debug) {
               style.backgroundColor =
                 this.anchorItem === item
                   ? "pink"
@@ -981,7 +984,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   getDebugInfo = () => {
-    const { enabledDebugLayout, width, height, getItemKey } = this.props;
+    const { debug, width, height } = this.props;
     const {
       startIndexToRender,
       stopIndexToRender,
@@ -989,7 +992,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     } = this.state;
 
     return (
-      enabledDebugLayout && (
+      debug && (
         <div
           style={{
             display: "flex",

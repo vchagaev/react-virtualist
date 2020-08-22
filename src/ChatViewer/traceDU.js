@@ -1,4 +1,4 @@
-export function trace(props, state, prevProps, prevState) {
+export function traceDU(props, state, prevProps, prevState) {
   let reasons = [];
 
   Object.entries(props).forEach(

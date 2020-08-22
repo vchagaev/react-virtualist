@@ -1,8 +1,11 @@
 import React from "react";
-import { OnScrollEvent, RenderRowProps, VirtualList } from "./VirtualList";
-import { Message, MessageProps } from "./Message";
-import AutoSizer from "react-virtualized-auto-sizer";
 import { Skeleton } from "antd";
+import AutoSizer from "react-virtualized-auto-sizer";
+
+import { OnScrollEvent, RenderRowProps, VirtualList } from "../VirtualList/VirtualList";
+import { Message, MessageProps } from "./Message";
+
+const DEBUG_MODE = false;
 
 interface ChatViewerProps {
   id: string;
@@ -45,12 +48,10 @@ export class ChatViewer extends React.PureComponent<
     newerIsLoading: false,
   };
 
-  scrollTo = async (index: number) => {
-    const { messages } = this.props;
-
+  scrollTo = async (message: MessageProps) => {
     if (this.virtualListRef && this.virtualListRef.current) {
       return this.virtualListRef.current.scrollTo({
-        ...messages[index],
+        ...message,
         typename: Typename.messgage,
       });
     }
@@ -75,10 +76,13 @@ export class ChatViewer extends React.PureComponent<
   }: RenderRowProps<VirtualListItem>) => {
     if (item.typename === Typename.messgage) {
       const message = item as MessageData;
-      // XXX: for debug purposes only. Lead to a lot of rerenderings
-      const offsetInfo = `${originalOffset} + ${offsetDelta} = ${correctedOffset}`;
-      const heightInfo = `${originalHeight} + ${heightDelta} = ${correctedHeight}`;
-      const fullName = `${index} ${message.fullName} (Offset: ${offsetInfo}) (Height: ${heightInfo})`;
+      let fullName = message.fullName;
+
+      if (DEBUG_MODE) {
+        const offsetInfo = `${originalOffset} + ${offsetDelta} = ${correctedOffset}`;
+        const heightInfo = `${originalHeight} + ${heightDelta} = ${correctedHeight}`;
+        fullName = `${index} ${message.fullName} (Offset: ${offsetInfo}) (Height: ${heightInfo})`;
+      }
 
       return (
         <div ref={ref}>
@@ -108,31 +112,33 @@ export class ChatViewer extends React.PureComponent<
     } = this.props;
     const { newerIsLoading, olderIsLoading } = this.state;
 
-    console.log('calculatedMiddleIndexToRender', calculatedMiddleIndexToRender);
-
-    if (hasOlder && !olderIsLoading) {
-      if (calculatedMiddleIndexToRender < 10) {
-        this.setState({ olderIsLoading: true });
+    if (hasOlder && !olderIsLoading && calculatedMiddleIndexToRender < 10) {
+      this.setState({ olderIsLoading: true }, () => {
         onOlderMessageRequest(messages[0]).finally(() => {
           this.setState({
             olderIsLoading: false,
           });
         });
-        return;
-      }
+      });
     }
 
-    if (hasNewer && !newerIsLoading) {
-      if (items.length - calculatedMiddleIndexToRender < 10) {
-        this.setState({
+    if (
+      hasNewer &&
+      !newerIsLoading &&
+      items.length - calculatedMiddleIndexToRender < 10
+    ) {
+      this.setState(
+        {
           newerIsLoading: true,
-        });
-        onNewerMessageRequest(messages[messages.length - 1]).finally(() => {
-          this.setState({
-            newerIsLoading: false,
+        },
+        () => {
+          onNewerMessageRequest(messages[messages.length - 1]).finally(() => {
+            this.setState({
+              newerIsLoading: false,
+            });
           });
-        });
-      }
+        }
+      );
     }
   };
 
@@ -144,7 +150,7 @@ export class ChatViewer extends React.PureComponent<
     const itemsForList: VirtualListItem[] = [];
     if (hasItems && (hasOlder || olderIsLoading)) {
       itemsForList.push({
-        id: `older-placeholder#${messages[0].id}`,
+        id: `older-placeholder#${messages[0].id}`, // unique id because we don't want to anchor them
         typename: Typename.placeholder,
       });
     }
@@ -156,7 +162,7 @@ export class ChatViewer extends React.PureComponent<
     );
     if (hasItems && (hasNewer || newerIsLoading)) {
       itemsForList.push({
-        id: `newer-placeholder#${messages[messages.length - 1].id}`,
+        id: `newer-placeholder#${messages[messages.length - 1].id}`, // unique id because we don't want to anchor them
         typename: Typename.placeholder,
       });
     }
@@ -172,7 +178,7 @@ export class ChatViewer extends React.PureComponent<
             height={height}
             renderRow={this.renderItem}
             reversed={true}
-            enabledDebugLayout={true}
+            debug={DEBUG_MODE}
             onScroll={this.onScroll}
           />
         )}
