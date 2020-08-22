@@ -42,38 +42,14 @@ function App() {
     DEFAULT_MESSAGE_INDEX
   );
 
-  const [hasNewer, setHasNewer] = useState<boolean>(true);
-  const [hasOlder, setHasOlder] = useState<boolean>(true);
-
-  const onNewerMessageRequest = useCallback(async (item) => {
-    console.log("give me newer", item);
-    await wait(10 * 1000);
+  const onNewerMessageRequest = useCallback(async () => {
+    await wait(2 * 1000);
     setMessages([...messages, ...getMessages({ min: 25, max: 25 })]);
   }, [messages, setMessages]);
-  const onOlderMessageRequest = useCallback(
-    async (item) => {
-      console.log("give me older", item);
-      await wait(10 * 1000);
-      setMessages([...getMessages({ min: 25, max: 25 }), ...messages]);
-    },
-    [messages, setMessages]
-  );
-
-  // useEffect(() => {
-  //   const intervalId = setInterval(() => {
-  //     setMessages([...messages, ...getMessages({ min: 0, max: 2 })]);
-  //   }, 5 * 1000);
-  //
-  //   return () => {
-  //     clearInterval(intervalId);
-  //   };
-  // }, [messages, setMessages, chatViewerRef.current]);
-
-  // useEffect(() => {
-  //   if (chatViewerRef.current && chatViewerRef.current.isAtTheBottom) {
-  //     chatViewerRef.current.scrollTo({ index: messages.length - 1 });
-  //   }
-  // }, [chatViewerRef.current, messages]);
+  const onOlderMessageRequest = useCallback(async () => {
+    await wait(2 * 1000);
+    setMessages([...getMessages({ min: 25, max: 25 }), ...messages]);
+  }, [messages, setMessages]);
 
   return (
     <div className="app">
@@ -186,8 +162,8 @@ function App() {
             id="chat-id"
             ref={chatViewerRef}
             messages={messages}
-            hasNewer={hasNewer}
-            hasOlder={hasOlder}
+            hasNewer={true}
+            hasOlder={true}
             onNewerMessageRequest={onNewerMessageRequest}
             onOlderMessageRequest={onOlderMessageRequest}
           />

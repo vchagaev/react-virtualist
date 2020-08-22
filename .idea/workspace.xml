@@ -11,11 +11,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/chapai.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/chapai.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/App.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/App.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/ChatViewer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ChatViewer.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Message.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/Message.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/VirtualList.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/VirtualList.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -316,7 +314,14 @@
       <option name="project" value="LOCAL" />
       <updated>1598086809715</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="a lot of different fixes and better handling new array">
+      <created>1598106559410</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1598106559410</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -335,7 +340,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="pretty" />
     <MESSAGE value="anchoring item" />
     <MESSAGE value="clear" />
     <MESSAGE value="fix" />
@@ -360,17 +364,18 @@
     <MESSAGE value="better handling of negative offsets" />
     <MESSAGE value="get rid of native scroll anchoring properly" />
     <MESSAGE value="tested infinite loader" />
-    <option name="LAST_COMMIT_MESSAGE" value="tested infinite loader" />
+    <MESSAGE value="a lot of different fixes and better handling new array" />
+    <option name="LAST_COMMIT_MESSAGE" value="a lot of different fixes and better handling new array" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598097876085">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598106559292">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598097876085" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598099959986">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598106559292" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598118711001">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598099959986" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598118711001" />
     <state x="0" y="23" key="FileDocumentManager.FileCacheConflict" timestamp="1598093021122">
       <screen x="0" y="23" width="1440" height="877" />
     </state>

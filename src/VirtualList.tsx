@@ -6,15 +6,14 @@ import { wait } from "./utils";
 import { trace } from "./trace";
 import { Corrector } from "./Corrector";
 
-const DEFAULT_ESTIMATED_HEIGHT = 50;
+const DEFAULT_ESTIMATED_HEIGHT = 100;
 const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
 const SCROLL_DEBOUNCE_MS = 300;
 
-// TODO: handle and explain asynchronous behaviour
 // TODO: comments and description and nuances
 
-// TODO: heuristic function getEstimatedHeight(item, width) for better layouting
+// TODO: supprot heuristic function getEstimatedHeight(item, width) for better layouting
 // TODO: logging system
 // TODO: tests
 
@@ -42,6 +41,7 @@ export interface OnScrollEvent<Item> {
   items: Item[];
   startIndexToRender: number;
   stopIndexToRender: number;
+  calculatedMiddleIndexToRender: number;
   offset: number;
   maxPossibleScrollTop: number;
   anchorItem: Item | null;
@@ -86,6 +86,7 @@ interface BuildOffsetsOptions<Item> {
   offset: number;
   lastPositionedIndex: number;
   anchorIndex: number | null;
+  indexMustBeCalculated: number;
 }
 
 enum ScrollingDirection {
@@ -107,6 +108,7 @@ interface StopIndexParams<Item extends Object> {
   anchorIndex: number | null;
   offset: number;
   height: number;
+  indexMustBeCalculated: number;
 }
 
 interface EstimatedTotalHeightParams<Item extends Object> {
@@ -232,6 +234,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     offset,
     lastPositionedIndex,
     anchorIndex,
+    indexMustBeCalculated,
   }: BuildOffsetsOptions<Item>) => {
     const lastPositionedItem = items[lastPositionedIndex];
 
@@ -268,6 +271,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         anchorIndex,
         offset,
         height,
+        indexMustBeCalculated,
       });
       const newLastPositionedIndex = Math.max(
         lastPositionedIndex,
@@ -293,6 +297,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       anchorIndex,
       offset,
       height,
+      indexMustBeCalculated,
     });
     const newLastPositionedIndex = Math.max(
       lastPositionedIndex,
@@ -323,13 +328,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       estimatedTotalHeight,
     } = this.state;
 
-    this.isAtTheTop = this.offset === 0;
-    this.isAtTheBottom = this.offset === this.getMaximumPossibleOffset();
+    this.isAtTheTop = this.offset === 0 && this.anchorIndex === 0;
+    this.isAtTheBottom =
+      this.offset === this.getMaximumPossibleOffset() &&
+      this.lastPositionedIndex === newItems.length - 1;
 
-    // call onScrollHandler only for synced items between state and props
-    // don't fire during scroll to item
-    // TODO: describe mindfuck about offset because it's unreal (virtual)
-    // TODO: how we should count offset corrector?
     if (
       newItems === prevItems &&
       onScroll &&
@@ -337,21 +340,24 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       this.scrollingToItem === null
     ) {
       onScroll({
-        items: newItems,
-        startIndexToRender,
-        stopIndexToRender,
-        offset: this.offset,
-        maxPossibleScrollTop: this.getMaximumPossibleOffset(),
-        anchorItem: this.anchorItem,
-        anchorIndex: this.anchorIndex,
-        lastPositionedIndex: this.lastPositionedIndex,
-        scrollingToIndex: this.scrollingToItem,
-        isScrolling: this.isScrolling,
-        scrollingDirection: this.scrollingDirection,
-        totalHeight: estimatedTotalHeight,
         isAtTheTop: this.isAtTheTop,
         isAtTheBottom: this.isAtTheBottom,
+        lastPositionedIndex: this.lastPositionedIndex,
+        scrollingDirection: this.scrollingDirection,
+        isScrolling: this.isScrolling,
+        startIndexToRender,
+        stopIndexToRender,
+        calculatedMiddleIndexToRender:
+          startIndexToRender +
+          Math.round((stopIndexToRender - startIndexToRender) / 2),
+        items: newItems,
+        anchorIndex: this.anchorIndex,
+        anchorItem: this.anchorItem,
         height: height,
+        offset: this.offset,
+        maxPossibleScrollTop: this.getMaximumPossibleOffset(),
+        scrollingToIndex: this.scrollingToItem,
+        totalHeight: estimatedTotalHeight,
       });
     }
   };
@@ -435,6 +441,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     anchorIndex,
     offset,
     height,
+    indexMustBeCalculated,
   }: StopIndexParams<Item>) => {
     const startItem = items[startIndex];
     const itemMetadata = this.getCorrectedItemMetadata(startItem, startIndex);
@@ -465,10 +472,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     }
 
     const stopIndexToRender = stopIndex;
+    let calculateUntil = indexMustBeCalculated;
+    if (anchorIndex !== null && anchorIndex > calculateUntil) {
+      calculateUntil = anchorIndex;
+    }
 
     // we have to always calculate anchorIndex
-    if (anchorIndex !== null && anchorIndex > stopIndex) {
-      while (stopIndex < anchorIndex && stopIndex < items.length - 1) {
+    if (calculateUntil > stopIndex) {
+      while (stopIndex < calculateUntil && stopIndex < items.length - 1) {
         stopIndex++;
         const curItem = items[stopIndex];
         this.setItemMetadata(curItem, { offset: curOffset });
@@ -528,17 +539,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     let newAnchorIndex = null;
     let newAnchorItem = null;
     let heightAddedBeforeAnchor = 0;
-
     // in case our anchor item is removed then try acnhor next one
     let fallbackAnchorIndex = anchorIndex !== null ? anchorIndex + 1 : null;
     let fallbackAnchorItem =
       (fallbackAnchorIndex && prevItems[fallbackAnchorIndex]) || null;
-    const usedItemKeys = new Set();
 
     for (let i = 0; i < newItems.length; i++) {
       const newItem = newItems[i];
       const newItemKey = getItemKey(newItem);
-      usedItemKeys.add(newItemKey);
 
       if (
         (!prevItems[i] || newItemKey !== getItemKey(prevItems[i])) &&
@@ -547,10 +555,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         newLastPositionedIndex = Math.max(0, i - 1);
       }
 
-      if (
-        (anchorItem && newItemKey === getItemKey(anchorItem)) ||
-        (fallbackAnchorItem && newItemKey === getItemKey(fallbackAnchorItem))
-      ) {
+      if (anchorItem && newItemKey === getItemKey(anchorItem)) {
         newAnchorIndex = i;
         newAnchorItem = newItem;
         break;
@@ -594,11 +599,18 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     trace(this.props, this.state, prevProps, prevState);
 
     const { items: newItems, height, estimatedItemHeight } = this.props;
-    const { items: prevItems, estimatedTotalHeight } = this.state;
+    const {
+      items: prevItems,
+      estimatedTotalHeight,
+      startIndexToRender,
+      stopIndexToRender,
+    } = this.state;
 
-    const { startIndexToRender, stopIndexToRender } = this.state;
     let curItems: Item[] = prevItems;
+    const indexMustBeCalculated =
+      this.scrollingToIndex === null ? 0 : this.scrollingToIndex;
     const anchorIndexBefore = this.anchorIndex;
+    const anchorItemBefore = this.anchorItem;
     let anchorOffsetBefore = null;
     if (anchorIndexBefore !== null && curItems[anchorIndexBefore]) {
       anchorOffsetBefore = this.getCorrectedItemMetadata(
@@ -612,13 +624,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         curItems[stopIndexToRender],
         stopIndexToRender
       ).correctedOffset;
-    }
-
-    if (this.scrollingToItem) {
-      // TODO: debug scrollTo
-      debugger;
-      this.anchorItem = this.scrollingToItem;
-      this.anchorIndex = this.scrollingToIndex;
     }
 
     if (this.canAdjustScrollTop() && this.corrector.isInitialized()) {
@@ -663,6 +668,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       offset: this.offset,
       lastPositionedIndex: this.lastPositionedIndex,
       anchorIndex: this.anchorIndex,
+      indexMustBeCalculated,
     });
 
     let anchorOffsetAfter = null;
@@ -682,11 +688,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     let scrollTopAdjustment = 0;
     if (
-      anchorIndexBefore !== null &&
-      anchorOffsetAfter === null &&
+      anchorItemBefore !== null &&
+      this.anchorItem === null &&
       heightAddedBeforeAnchorWithNewItems
     ) {
-      scrollTopAdjustment = heightAddedBeforeAnchorWithNewItems;
+      scrollTopAdjustment =
+        heightAddedBeforeAnchorWithNewItems -
+        this.getItemMetadata(anchorItemBefore).height;
     } else if (
       anchorOffsetBefore !== null &&
       anchorOffsetAfter !== null &&
@@ -702,6 +710,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         offset: this.offset + scrollTopAdjustment,
         lastPositionedIndex: newState.newLastPositionedIndex,
         anchorIndex: this.anchorIndex,
+        indexMustBeCalculated,
       });
     }
 
@@ -754,15 +763,15 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { height: originalHeight } = this.getItemMetadata(item);
     const newHeight = Math.round(contentRect.height);
 
+    if (newHeight === originalHeight) {
+      return;
+    }
+
     console.log("onResize", {
       index,
       originalHeight,
       newHeight,
     });
-
-    if (newHeight === originalHeight) {
-      return;
-    }
 
     if (
       this.anchorIndex !== null &&
@@ -837,7 +846,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return Math.max(0, estimatedTotalHeight - height);
   };
 
-  scrollTo = async (item: Item, retries: number = 10): Promise<number> => {
+  scrollTo = async (item: Item, retries: number = 5): Promise<number> => {
     const { getItemKey, items: propsItems } = this.props;
     const { items: stateItems } = this.state;
 
@@ -846,20 +855,25 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       getItemKey(this.scrollingToItem) !== getItemKey(item)
     ) {
       console.warn(
-        `Already scrolling to item: ${this.scrollingToItem}, but got item: $item}. Start scrolling to new item.`
+        `Already scrolling to item: ${this.scrollingToItem}, but got item: ${item}. It is ignored`
       );
     }
 
-    let index = this.getIndexByItem(item);
+    let index =
+      this.scrollingToIndex === null
+        ? this.getIndexByItem(item)
+        : this.scrollingToIndex;
     console.log("scrollTo", item, index, retries);
 
     if (index === null) {
       this.scrollingToItem = null;
+      this.scrollingToIndex = null;
       throw new Error(`There is no such item in the list, ${item}`);
     }
 
     if (!this.containerRef.current) {
       this.scrollingToItem = null;
+      this.scrollingToIndex = null;
       throw new Error("Container is not initialized yet");
     }
 
@@ -901,13 +915,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     if (correctedMeasured && this.offset === newOffset) {
       this.scrollingToItem = null;
+      this.scrollingToIndex = null;
       return this.offset;
     } else if (retries <= 0) {
       this.scrollingToItem = null;
+      this.scrollingToIndex = null;
       throw new Error(`Could not scroll to index ${index}. No retries left`);
     }
 
-    // TODO: debug scrollTO
     this.containerRef.current.scrollTop = newOffset;
 
     await wait(SCROLL_THROTTLE_MS * 2); // wait for state.offset to be changed by scroll
@@ -966,7 +981,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   getDebugInfo = () => {
-    const { enabledDebugLayout, width, height } = this.props;
+    const { enabledDebugLayout, width, height, getItemKey } = this.props;
     const {
       startIndexToRender,
       stopIndexToRender,
@@ -993,7 +1008,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
           <span>offset: {this.offset}</span>
           <span>anchorIndex: {this.anchorIndex}</span>
           <span>lastPositionedIndex: {this.lastPositionedIndex}</span>
-          <span>scrollingToIndex: {JSON.stringify(this.scrollingToItem)}</span>
+          <span>
+            scrollingToIndex: {this.scrollingToIndex && this.scrollingToIndex}
+          </span>
           <span>isScrolling: {this.isScrolling ? "true" : "false"}</span>
           <span>
             scrollingDirection: {this.scrollingDirection ? "down" : "up"}

@@ -2,7 +2,7 @@ import React from "react";
 import { OnScrollEvent, RenderRowProps, VirtualList } from "./VirtualList";
 import { Message, MessageProps } from "./Message";
 import AutoSizer from "react-virtualized-auto-sizer";
-import { Skeleton, Spin } from "antd";
+import { Skeleton } from "antd";
 
 interface ChatViewerProps {
   id: string;
@@ -20,7 +20,6 @@ interface ChatViewerState {
 
 enum Typename {
   messgage,
-  loader,
   placeholder,
 }
 interface ServiceItem {
@@ -45,16 +44,6 @@ export class ChatViewer extends React.PureComponent<
     olderIsLoading: false,
     newerIsLoading: false,
   };
-
-  // olderLoader = {
-  //   id: "older-loader",
-  //   typename: Typename.loader,
-  // };
-
-  // newerLoader = {
-  //   id: "newer-loader",
-  //   typename: Typename.loader,
-  // };
 
   scrollTo = async (index: number) => {
     const { messages } = this.props;
@@ -97,34 +86,18 @@ export class ChatViewer extends React.PureComponent<
         </div>
       );
     }
-    if (item.typename === Typename.loader) {
-      return (
-        <div ref={ref} style={{ textAlign: "center" }}>
-          <Spin />
-        </div>
-      );
-    }
     if (item.typename === Typename.placeholder) {
       return (
         <div ref={ref}>
-          <Skeleton active avatar paragraph={{ rows: 4 }} />
-          <Skeleton active avatar paragraph={{ rows: 4 }} />
-          <Skeleton active avatar paragraph={{ rows: 4 }} />
-          <Skeleton active avatar paragraph={{ rows: 4 }} />
-          <Skeleton active avatar paragraph={{ rows: 4 }} />
-          <Skeleton active avatar paragraph={{ rows: 4 }} />
+          <Skeleton active avatar paragraph={{ rows: 1 }} />
         </div>
       );
     }
   };
 
   onScroll = ({
-    isAtTheTop,
-    isAtTheBottom,
-    anchorIndex,
-    height,
-    offset,
-    maxPossibleScrollTop,
+    items,
+    calculatedMiddleIndexToRender,
   }: OnScrollEvent<VirtualListItem>) => {
     const {
       messages,
@@ -135,13 +108,10 @@ export class ChatViewer extends React.PureComponent<
     } = this.props;
     const { newerIsLoading, olderIsLoading } = this.state;
 
-    if (newerIsLoading || olderIsLoading) {
-      return;
-    }
+    console.log('calculatedMiddleIndexToRender', calculatedMiddleIndexToRender);
 
-    if (hasOlder) {
-      // there is placeholder at the top
-      if (isAtTheTop || offset < height * 2) {
+    if (hasOlder && !olderIsLoading) {
+      if (calculatedMiddleIndexToRender < 10) {
         this.setState({ olderIsLoading: true });
         onOlderMessageRequest(messages[0]).finally(() => {
           this.setState({
@@ -152,10 +122,8 @@ export class ChatViewer extends React.PureComponent<
       }
     }
 
-    if (hasNewer) {
-      // there is placeholder at the bottom
-      // anchor is is about top side
-      if (isAtTheBottom || offset > maxPossibleScrollTop - height) {
+    if (hasNewer && !newerIsLoading) {
+      if (items.length - calculatedMiddleIndexToRender < 10) {
         this.setState({
           newerIsLoading: true,
         });
@@ -174,9 +142,6 @@ export class ChatViewer extends React.PureComponent<
     const hasItems = messages.length > 0;
 
     const itemsForList: VirtualListItem[] = [];
-    // if (hasItems && olderIsLoading) {
-    //   itemsForList.push(this.olderLoader);
-    // }
     if (hasItems && (hasOlder || olderIsLoading)) {
       itemsForList.push({
         id: `older-placeholder#${messages[0].id}`,
@@ -206,7 +171,7 @@ export class ChatViewer extends React.PureComponent<
             width={width}
             height={height}
             renderRow={this.renderItem}
-            // reversed={true}
+            reversed={true}
             enabledDebugLayout={true}
             onScroll={this.onScroll}
           />
