@@ -102,7 +102,7 @@ export class ChatViewer extends React.PureComponent<
     if (item.typename === Typename.placeholder) {
       return (
         <div ref={ref}>
-          <Skeleton active avatar paragraph={{ rows: 1 }} />
+          <Skeleton active avatar paragraph={{ rows: 4 }} />
         </div>
       );
     }

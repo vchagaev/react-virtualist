@@ -10,9 +10,11 @@ import { Corrector } from "./Corrector";
 const DEFAULT_ESTIMATED_HEIGHT = 100;
 const SCROLL_THROTTLE_MS = 100;
 const MEASURE_UPDATE_DEBOUNCE_MS = 50;
-const SCROLL_DEBOUNCE_MS = 300;
+const SCROLL_DEBOUNCE_MS = 700;
+const DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO = 1;
 
-// TODO: supprot heuristic function getEstimatedHeight(item, width) for better layouting
+// TODO: modularize
+// TODO: support heuristic function getEstimatedHeight(item, width) for better layouting
 // TODO: logging system
 // TODO: tests
 
@@ -21,7 +23,7 @@ const SCROLL_DEBOUNCE_MS = 300;
  * It anchors to the top element in the current view. It uses ResizeObserver for detecting changes in heights.
  * Inspired by react-window.
  *
- * There are some caveats except described below. Items from props may be applied with delay.
+ * There are some caveats except described in related issues. Items from props may be applied with delay.
  * They are applied only when scroll is idle. This is the limitation of the correction technique that is used here.
  * This technique relies on consistent indexes to calculate corrected offsets.
  * scrollTo - is async function because we measure items on the fly.
@@ -41,6 +43,7 @@ interface VirtualListProps<Item> {
   reversed: boolean; // if the list is stick to the bottom
   items: Item[];
   selectedItem: Item;
+  offscreenRatio: number;
   debug?: boolean;
   onScroll?: (params: OnScrollEvent<Item>) => void; // fire on scroll only on meaningful scrolls
 }
@@ -102,6 +105,7 @@ interface BuildOffsetsOptions<Item> {
   lastPositionedIndex: number;
   anchorIndex: number | null;
   indexMustBeCalculated: number;
+  offscreenRatio: number;
 }
 
 enum ScrollingDirection {
@@ -123,6 +127,7 @@ interface StopIndexParams<Item extends Object> {
   offset: number;
   height: number;
   indexMustBeCalculated: number;
+  offscreenRatio: number;
 }
 
 interface EstimatedTotalHeightParams<Item extends Object> {
@@ -140,6 +145,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     approximateItemHeight: DEFAULT_ESTIMATED_HEIGHT,
     reversed: false,
     selectedItem: null,
+    offscreenRatio: DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO,
   };
 
   state = {
@@ -250,6 +256,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     lastPositionedIndex,
     anchorIndex,
     indexMustBeCalculated,
+    offscreenRatio,
   }: BuildOffsetsOptions<Item>) => {
     const lastPositionedItem = items[lastPositionedIndex];
 
@@ -271,22 +278,27 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       lastPositionedItemMetadata.offset > offset
     ) {
       // we've already built layout for this offset and we can get startIndex
-      const {
-        startIndexToRender: newStartIndexToRender,
-        anchorItem: newAnchorItem,
-        anchorIndex: newAnchorIndex,
-      } = this.getStartIndex(items, offset, lastPositionedIndex);
+      const { startIndexToRender: newStartIndexToRender } = this.getStartIndex(
+        items,
+        offset,
+        lastPositionedIndex,
+        height,
+        offscreenRatio
+      );
 
       const {
         stopIndexToRender: newStopIndexToRender,
         lastCalculatedIndex,
-      } = this.calculateStopIndex({
+        newAnchorItem,
+        newAnchorIndex,
+      } = this.calculateStopIndexAndAnchor({
         items,
         startIndex: newStartIndexToRender,
         anchorIndex,
         offset,
         height,
         indexMustBeCalculated,
+        offscreenRatio,
       });
       const newLastPositionedIndex = Math.max(
         lastPositionedIndex,
@@ -306,24 +318,29 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const {
       stopIndexToRender: newStopIndexToRender,
       lastCalculatedIndex,
-    } = this.calculateStopIndex({
+      newAnchorItem,
+      newAnchorIndex,
+    } = this.calculateStopIndexAndAnchor({
       items,
       startIndex: lastPositionedIndex,
       anchorIndex,
       offset,
       height,
       indexMustBeCalculated,
+      offscreenRatio,
     });
     const newLastPositionedIndex = Math.max(
       lastPositionedIndex,
       lastCalculatedIndex
     );
 
-    const {
-      startIndexToRender: newStartIndexToRender,
-      anchorItem: newAnchorItem,
-      anchorIndex: newAnchorIndex,
-    } = this.getStartIndex(items, offset, newLastPositionedIndex);
+    const { startIndexToRender: newStartIndexToRender } = this.getStartIndex(
+      items,
+      offset,
+      newLastPositionedIndex,
+      height,
+      offscreenRatio
+    );
 
     return {
       newStartIndexToRender,
@@ -387,13 +404,13 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   }, SCROLL_DEBOUNCE_MS);
 
   onScrollThrottled = throttle((scrollTop: number) => {
+    const normalizedScrollTop = Math.max(0, Math.round(scrollTop)); // for safari inertia scroll
     this.scrollingDirection =
-      scrollTop <= this.offset
+      normalizedScrollTop <= this.offset
         ? ScrollingDirection.up
         : ScrollingDirection.down;
-    this.offset = Math.round(scrollTop);
     this.isScrolling = true;
-
+    this.offset = normalizedScrollTop;
     this.callOnScrollHandler();
     this.onScrollDebounced();
 
@@ -436,32 +453,35 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   getStartIndex = (
     items: Item[],
     offset: number,
-    lastPositionedIndex: number
+    lastPositionedIndex: number,
+    height: number,
+    offsetRatio: number
   ) => {
     const nearestIndex = this.findNearestItemBinarySearch(
       items,
-      offset,
+      offset - height * offsetRatio, // for better virtualization
       lastPositionedIndex
     );
 
     return {
-      anchorIndex: nearestIndex,
-      anchorItem: items[nearestIndex],
       startIndexToRender: Math.max(0, nearestIndex - 1), // for a11y +1 item upper
     };
   };
 
-  calculateStopIndex = ({
+  calculateStopIndexAndAnchor = ({
     items,
     startIndex,
     anchorIndex,
     offset,
     height,
     indexMustBeCalculated,
+    offscreenRatio,
   }: StopIndexParams<Item>) => {
+    let newAnchorItem = null;
+    let newAnchorIndex = null;
     const startItem = items[startIndex];
     const itemMetadata = this.getCorrectedItemMetadata(startItem, startIndex);
-    const targetOffset = offset + height;
+    const targetOffset = offset + height + height * offscreenRatio;
 
     // TRICKY: During calculation we calculate offsets with corrections but we set original offsets
     let curOffsetCorrected =
@@ -469,11 +489,32 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     let curOffset = itemMetadata.originalOffset + itemMetadata.originalHeight;
     let stopIndex = startIndex;
 
+    if (
+      (itemMetadata.correctedOffset + itemMetadata.correctedHeight >= offset ||
+        itemMetadata.correctedOffset >= offset) &&
+      itemMetadata.correctedMeasured
+    ) {
+      newAnchorItem = items[stopIndex];
+      newAnchorIndex = stopIndex;
+    }
+
     while (curOffsetCorrected < targetOffset && stopIndex < items.length - 1) {
       stopIndex++;
       const curItem = items[stopIndex];
       this.setItemMetadata(curItem, { offset: curOffset });
       const curItemMetadata = this.getCorrectedItemMetadata(curItem, stopIndex);
+
+      if (
+        (curItemMetadata.correctedOffset + curItemMetadata.correctedHeight >=
+          offset ||
+          curItemMetadata.correctedOffset >= offset) &&
+        curItemMetadata.correctedMeasured &&
+        !newAnchorItem
+      ) {
+        newAnchorItem = curItem;
+        newAnchorIndex = stopIndex;
+      }
+
       curOffset += curItemMetadata.originalHeight;
       curOffsetCorrected += curItemMetadata.correctedHeight;
     }
@@ -512,6 +553,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return {
       stopIndexToRender,
       lastCalculatedIndex: stopIndex,
+      newAnchorItem,
+      newAnchorIndex,
     };
   };
 
@@ -600,20 +643,21 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   adjustScrollTop = (scrollTopDelta: number) => {
     if (scrollTopDelta && this.containerRef.current) {
       console.log("adjustScrollTop", scrollTopDelta);
+      this.containerRef.current.style.overflow = "hidden"; // to stop safari inertia
       this.containerRef.current.scrollTop += scrollTopDelta;
+      this.offset = this.containerRef.current.scrollTop;
+      this.containerRef.current.style.overflow = "auto";
     }
   };
 
   /**
-   *
+   * Check if we can apply scrollTop
    */
   canAdjustScrollTop = () => {
-    const { approximateItemHeight } = this.props;
-
     return (
       !this.isScrolling ||
-      this.offset < approximateItemHeight ||
-      this.getMaximumPossibleOffset() - this.offset < approximateItemHeight
+      this.offset === 0 ||
+      this.offset === this.getMaximumPossibleOffset()
     );
   };
 
@@ -626,6 +670,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       height,
       approximateItemHeight,
       debug,
+      offscreenRatio,
     } = this.props;
 
     const {
@@ -704,6 +749,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       lastPositionedIndex: this.lastPositionedIndex,
       anchorIndex: this.anchorIndex,
       indexMustBeCalculated,
+      offscreenRatio,
     });
 
     let anchorOffsetAfter = null;
@@ -749,6 +795,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         lastPositionedIndex: newState.newLastPositionedIndex,
         anchorIndex: this.anchorIndex,
         indexMustBeCalculated,
+        offscreenRatio,
       });
     }
 

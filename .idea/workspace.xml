@@ -11,8 +11,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="93da65b5-8305-48e2-b364-d59e008308ee" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/virtual-list.iml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/ChatViewer/ChatViewer.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/src/ChatViewer/ChatViewer.tsx" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,7 +20,7 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../react-virtualist" />
     <option name="RESET_MODE" value="SOFT" />
   </component>
   <component name="JsFlowSettings">
@@ -346,7 +346,14 @@
       <option name="project" value="LOCAL" />
       <updated>1598127440519</updated>
     </task>
-    <option name="localTasksCounter" value="41" />
+    <task id="LOCAL-00041" summary="fix for more reliable adding">
+      <created>1598127707106</created>
+      <option name="number" value="00041" />
+      <option name="presentableId" value="LOCAL-00041" />
+      <option name="project" value="LOCAL" />
+      <updated>1598127707106</updated>
+    </task>
+    <option name="localTasksCounter" value="42" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -365,8 +372,6 @@
     <option name="oldMeFiltersMigrated" value="true" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="before refactoring" />
-    <MESSAGE value="debug info and clear" />
     <MESSAGE value="anchor working" />
     <MESSAGE value="fix infinite loop" />
     <MESSAGE value="fix changing height delta several times" />
@@ -390,17 +395,19 @@
     <MESSAGE value="fix scrolling and deleting anchor" />
     <MESSAGE value="better structure" />
     <MESSAGE value="comments and pretty" />
-    <option name="LAST_COMMIT_MESSAGE" value="comments and pretty" />
+    <MESSAGE value="fix for more reliable adding" />
+    <MESSAGE value="settings" />
+    <option name="LAST_COMMIT_MESSAGE" value="settings" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598127440377">
+    <state x="342" y="23" key="CommitChangelistDialog2" timestamp="1598128706345">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598127440377" />
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598127309309">
+    <state x="342" y="23" key="CommitChangelistDialog2/0.23.1440.877@0.23.1440.877" timestamp="1598128706345" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog" timestamp="1598201114153">
       <screen x="0" y="23" width="1440" height="877" />
     </state>
-    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598127309309" />
+    <state x="100" y="123" width="1340" height="777" maximized="true" key="DiffContextDialog/0.23.1440.877@0.23.1440.877" timestamp="1598201114153" />
     <state x="0" y="23" key="FileDocumentManager.FileCacheConflict" timestamp="1598093021122">
       <screen x="0" y="23" width="1440" height="877" />
     </state>

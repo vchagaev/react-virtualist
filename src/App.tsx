@@ -30,17 +30,17 @@ function App() {
 
   const onNewerMessageRequest = useCallback(async () => {
     await wait(API_DELAY);
-    setMessages([
-      ...messages,
-      ...getMessages({ min: DEFAULT_BATCH_COUNT, max: DEFAULT_BATCH_COUNT }),
-    ]);
+    setMessages((prevMessages) => ([
+      ...prevMessages,
+      ...getMessages({min: DEFAULT_BATCH_COUNT, max: DEFAULT_BATCH_COUNT}),
+    ]));
   }, [messages, setMessages]);
   const onOlderMessageRequest = useCallback(async () => {
     await wait(API_DELAY);
-    setMessages([
-      ...getMessages({ min: DEFAULT_BATCH_COUNT, max: DEFAULT_BATCH_COUNT }),
-      ...messages,
-    ]);
+    setMessages((prevMessages) => ([
+      ...getMessages({min: DEFAULT_BATCH_COUNT, max: DEFAULT_BATCH_COUNT}),
+      ...prevMessages,
+    ]));
   }, [messages, setMessages]);
 
   const chatViewerControlPanel = (
