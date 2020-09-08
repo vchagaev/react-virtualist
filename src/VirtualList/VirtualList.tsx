@@ -6,6 +6,7 @@ import { ItemMeasure } from "./ItemMeasure";
 import { wait } from "../utils";
 import { traceDU } from "../ChatViewer/traceDU";
 import { Corrector } from "./Corrector";
+import { DebugInfoContainer } from './DebugInfoContainer'
 
 const DEFAULT_ESTIMATED_HEIGHT = 100;
 const SCROLL_THROTTLE_MS = 100;
@@ -1066,59 +1067,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return itemsToRender;
   };
 
-  getDebugInfo = () => {
-    const { debug, width, height } = this.props;
-    const {
-      startIndexToRender,
-      stopIndexToRender,
-      estimatedTotalHeight,
-    } = this.state;
-
-    return (
-      debug && (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            position: "absolute",
-            right: -width,
-            top: height / 4,
-            zIndex: 2,
-            backgroundColor: "black",
-            color: "white",
-            width: 180,
-          }}
-        >
-          <span>startIndexToRender: {startIndexToRender}</span>
-          <span>stopIndexToRender: {stopIndexToRender}</span>
-          <span>offset: {this.offset}</span>
-          <span>anchorIndex: {this.anchorIndex}</span>
-          <span>lastPositionedIndex: {this.lastPositionedIndex}</span>
-          <span>
-            scrollingToIndex: {this.scrollingToIndex && this.scrollingToIndex}
-          </span>
-          <span>isScrolling: {this.isScrolling ? "true" : "false"}</span>
-          <span>
-            scrollingDirection: {this.scrollingDirection ? "down" : "up"}
-          </span>
-          <span>inited: {this.inited ? "true" : "false"}</span>
-          <span>totalHeight: {estimatedTotalHeight}</span>
-          <span>isAtTheTop: {this.offset === 0 ? "true" : "false"}</span>
-          <span>
-            isAtTheBottom:{" "}
-            {this.offset === this.getMaximumPossibleOffset() ? "true" : "false"}
-          </span>
-        </div>
-      )
-    );
-  };
-
   render() {
-    const { height, width, reversed } = this.props;
+    const { height, width, reversed, debug } = this.props;
     const { estimatedTotalHeight } = this.state;
 
     const itemsToRender = this.getItemsToRender();
-    const debugInfo = this.getDebugInfo();
 
     let curHeight = height;
     let curOverflow = "auto";
@@ -1134,7 +1087,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
           position: "relative",
         }}
       >
-        {debugInfo}
+        <DebugInfoContainer<Item> instance={this} enable={debug} />
         <div
           style={{
             width,
