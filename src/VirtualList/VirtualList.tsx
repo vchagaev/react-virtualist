@@ -1,13 +1,12 @@
-import React, { CSSProperties, UIEvent } from "react";
-import throttle from "lodash-es/throttle";
+import React from "react";
 import debounce from "lodash-es/debounce";
 
-import { ItemMeasure, onResizeFn } from './ItemMeasure'
+import { onResizeFn } from "./ItemMeasure";
 import { wait } from "../utils";
 import { traceDU } from "../ChatViewer/traceDU";
 import { Corrector } from "./Corrector";
-import { DebugInfoContainer } from "./DebugInfoContainer";
 import { Row } from "./Row";
+import { Containers } from "./Containers";
 
 const DEFAULT_ESTIMATED_HEIGHT = 100;
 const SCROLL_THROTTLE_MS = 100;
@@ -51,7 +50,7 @@ interface VirtualListProps<Item> {
   items: Item[];
   selectedItem: Item;
   offscreenRatio: number;
-  debug?: boolean;
+  debug: boolean;
   onScroll?: (params: OnScrollEvent<Item>) => void; // fire on scroll only on meaningful scrolls
 }
 
@@ -153,6 +152,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     reversed: false,
     selectedItem: null,
     offscreenRatio: DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO,
+    debug: false,
   };
 
   state = {
@@ -410,8 +410,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.forceUpdate();
   }, SCROLL_DEBOUNCE_MS);
 
-  onScrollThrottled = throttle((scrollTop: number) => {
-    const normalizedScrollTop = Math.max(0, Math.round(scrollTop)); // for safari inertia scroll
+  onScroll = (normalizedScrollTop: number) => {
     this.scrollingDirection =
       normalizedScrollTop <= this.offset
         ? ScrollingDirection.up
@@ -422,10 +421,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.onScrollDebounced();
 
     this.forceUpdate();
-  }, SCROLL_THROTTLE_MS);
-
-  onScroll = (event: UIEvent) => {
-    this.onScrollThrottled(event.currentTarget.scrollTop);
   };
 
   findNearestItemBinarySearch = (
@@ -1034,7 +1029,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       const itemMetadata = this.getCorrectedItemMetadata(item, i);
 
       itemsToRender.push(
-        <Row
+        <Row<Item>
           key={getItemKey(item)}
           item={item}
           anchorItem={this.anchorItem}
@@ -1054,48 +1049,19 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { height, width, reversed, debug } = this.props;
     const { estimatedTotalHeight } = this.state;
 
-    const itemsToRender = this.getRowsToRender();
-
-    let curHeight = height;
-    let curOverflow = "auto";
-    if (reversed && estimatedTotalHeight < height) {
-      curHeight = estimatedTotalHeight;
-      curOverflow = "none";
-    }
-
     return (
-      <div
-        style={{
-          height,
-          position: "relative",
-        }}
-      >
-        <DebugInfoContainer<Item> instance={this} enable={debug} />
-        <div
-          style={{
-            width,
-            height: curHeight,
-            overflow: curOverflow,
-            WebkitOverflowScrolling: "touch",
-            willChange: "transform",
-            position: "absolute",
-            bottom: reversed ? 0 : undefined,
-            overflowAnchor: "none",
-          }}
-          onScroll={this.onScroll}
-          ref={this.containerRef}
-        >
-          <div
-            style={{
-              height: estimatedTotalHeight,
-              width: "100%",
-              position: "relative",
-            }}
-          >
-            {itemsToRender}
-          </div>
-        </div>
-      </div>
+      <Containers
+        rows={this.getRowsToRender()}
+        height={height}
+        width={width}
+        debug={debug}
+        onScroll={this.onScroll}
+        estimatedTotalHeight={estimatedTotalHeight}
+        containerRef={this.containerRef}
+        reversed={reversed}
+        instance={this}
+        scrollThrottle={SCROLL_THROTTLE_MS}
+      />
     );
   }
 }
