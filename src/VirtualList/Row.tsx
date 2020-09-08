@@ -8,7 +8,7 @@ interface RowProps<Item> {
   index: number;
   itemMetadata: CorrectedItemMetadata;
   anchorItem: Item | null;
-  debug?: boolean;
+  debug: boolean;
   renderRow: RenderRowFn<Item>;
 }
 

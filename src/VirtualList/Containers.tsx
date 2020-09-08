@@ -1,10 +1,7 @@
 import { DebugInfoContainer } from "./DebugInfoContainer";
 import React, { ReactNodeArray, UIEvent } from "react";
 import throttle from "lodash-es/throttle";
-import { Row } from "./Row";
 import { VirtualList } from "./VirtualList";
-
-const SCROLL_THROTTLE_MS = 100;
 
 interface ContainersProps<Item> {
   height: number;

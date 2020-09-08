@@ -38,7 +38,7 @@ export class DebugInfoContainer<Item> extends React.Component<
         <span>lastPositionedIndex: {instance.lastPositionedIndex}</span>
         <span>
           scrollingToIndex:{" "}
-          {instance.scrollingToIndex && instance.scrollingToIndex}
+          {instance.scroller.scrollingToIndex && instance.scroller.scrollingToIndex}
         </span>
         <span>isScrolling: {instance.isScrolling ? "true" : "false"}</span>
         <span>

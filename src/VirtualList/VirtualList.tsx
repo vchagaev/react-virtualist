@@ -2,11 +2,11 @@ import React from "react";
 import debounce from "lodash-es/debounce";
 
 import { onResizeFn } from "./ItemMeasure";
-import { wait } from "../utils";
 import { traceDU } from "../ChatViewer/traceDU";
 import { Corrector } from "./Corrector";
 import { Row } from "./Row";
 import { Containers } from "./Containers";
+import { Scroller } from "./Scroller";
 
 const DEFAULT_ESTIMATED_HEIGHT = 100;
 const SCROLL_THROTTLE_MS = 100;
@@ -158,7 +158,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   state = {
     startIndexToRender: 0, // startIndex for virtual window to render
     stopIndexToRender: -1, // stopIndex for virtual window to render
-    items: [],
+    items: this.props.items,
     estimatedTotalHeight: 0,
   };
 
@@ -172,14 +172,28 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   containerRef = React.createRef<HTMLDivElement>();
   // for this index and all indexes below we know offsets. Also we know heights but some of them might be not measured yet
   lastPositionedIndex: number = 0;
-  scrollingToItem: Item | null = null;
-  scrollingToIndex: number | null = null;
   isScrolling: boolean = false;
   corrector: Corrector = new Corrector();
   scrollingDirection: ScrollingDirection = ScrollingDirection.down;
   inited: boolean = false;
   isAtTheTop: boolean = false;
   isAtTheBottom: boolean = false;
+
+  forceUpdateAsync = (): Promise<void> =>
+    new Promise((resolve) => {
+      this.forceUpdate(() => resolve());
+    });
+
+  getMaximumPossibleOffset = () => {
+    const { height } = this.props;
+    const { estimatedTotalHeight } = this.state;
+
+    if (!this.containerRef.current) {
+      return 0;
+    }
+
+    return Math.max(0, estimatedTotalHeight - height);
+  };
 
   ensureItemMetadata = (itemKey: string) => {
     const { approximateItemHeight } = this.props;
@@ -252,6 +266,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       heightDelta,
     };
   };
+
+  scroller: Scroller<Item> = new Scroller<Item>(
+    this.props.getItemKey,
+    SCROLL_THROTTLE_MS * 2,
+    this.getCorrectedItemMetadata,
+    this.forceUpdateAsync,
+    this.getMaximumPossibleOffset
+  );
 
   /**
    * Build offsets for current view, needed index and anchorIndex and get new state values
@@ -376,7 +398,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       newItems === prevItems &&
       onScroll &&
       this.inited &&
-      this.scrollingToItem === null
+      this.scroller.scrollingToItem === null
     ) {
       // don't call onScroll while scrolling to item or during initialization
       onScroll({
@@ -396,7 +418,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         height: height,
         offset: this.offset,
         maxPossibleScrollTop: this.getMaximumPossibleOffset(),
-        scrollingToIndex: this.scrollingToItem,
+        scrollingToIndex: this.scroller.scrollingToItem,
         totalHeight: estimatedTotalHeight,
       });
     }
@@ -688,7 +710,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     let curItems: Item[] = prevItems;
     const indexMustBeCalculated =
-      this.scrollingToIndex === null ? 0 : this.scrollingToIndex;
+      this.scroller.scrollingToIndex === null ? 0 : this.scroller.scrollingToIndex;
     const anchorIndexBefore = this.anchorIndex;
     const anchorItemBefore = this.anchorItem;
     let anchorOffsetBefore = null;
@@ -907,115 +929,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     );
   };
 
-  forceUpdateAsync = () =>
-    new Promise((resolve) => {
-      this.forceUpdate(resolve);
+  scrollTo = (item: Item): Promise<number> => {
+    const { items: propsItems } = this.props;
+
+    return this.scroller.scrollToItem({
+      item: item,
+      items: propsItems,
+      container: this.containerRef.current,
     });
-
-  getIndexByItem = (item: Item) => {
-    const { getItemKey } = this.props;
-    const index = this.props.items.findIndex(
-      (i) => getItemKey(i) === getItemKey(item)
-    );
-    if (index === -1) {
-      return null;
-    }
-    return index;
-  };
-
-  getMaximumPossibleOffset = () => {
-    const { height } = this.props;
-    const { estimatedTotalHeight } = this.state;
-
-    if (!this.containerRef.current) {
-      return 0;
-    }
-
-    return Math.max(0, estimatedTotalHeight - height);
-  };
-
-  scrollTo = async (item: Item, retries: number = 5): Promise<number> => {
-    const { getItemKey, items: propsItems } = this.props;
-    const { items: stateItems } = this.state;
-
-    if (
-      this.scrollingToItem !== null &&
-      getItemKey(this.scrollingToItem) !== getItemKey(item)
-    ) {
-      console.warn(
-        `Already scrolling to item: ${this.scrollingToItem}, but got item: ${item}. It is ignored`
-      );
-    }
-
-    let index =
-      this.scrollingToIndex === null
-        ? this.getIndexByItem(item)
-        : this.scrollingToIndex;
-    console.log("scrollTo", item, index, retries);
-
-    if (index === null) {
-      this.scrollingToItem = null;
-      this.scrollingToIndex = null;
-      throw new Error(`There is no such item in the list, ${item}`);
-    }
-
-    if (!this.containerRef.current) {
-      this.scrollingToItem = null;
-      this.scrollingToIndex = null;
-      throw new Error("Container is not initialized yet");
-    }
-
-    if (
-      stateItems.length !== propsItems.length ||
-      getItemKey(stateItems[index]) !== getItemKey(propsItems[index])
-    ) {
-      // wait for sync between props and state
-      await this.forceUpdateAsync();
-      await wait(SCROLL_THROTTLE_MS * 2);
-      return this.scrollTo(item, retries - 1);
-    }
-
-    // cDU knows about it
-    this.scrollingToItem = item;
-    this.scrollingToIndex = index;
-
-    await this.forceUpdateAsync(); // wait for building new metadata by buildItemsMetadata
-
-    if (
-      stateItems.length !== propsItems.length ||
-      getItemKey(this.state.items[index]) !==
-        getItemKey(this.props.items[index])
-    ) {
-      // wait for sync between props and state
-      await this.forceUpdateAsync();
-      await wait(SCROLL_THROTTLE_MS * 2);
-      return this.scrollTo(item, retries - 1);
-    }
-
-    const {
-      correctedOffset,
-      correctedMeasured,
-    } = this.getCorrectedItemMetadata(this.props.items[index], index);
-    const newOffset = Math.min(
-      this.getMaximumPossibleOffset(),
-      correctedOffset
-    );
-
-    if (correctedMeasured && this.offset === newOffset) {
-      this.scrollingToItem = null;
-      this.scrollingToIndex = null;
-      return this.offset;
-    } else if (retries <= 0) {
-      this.scrollingToItem = null;
-      this.scrollingToIndex = null;
-      throw new Error(`Could not scroll to index ${index}. No retries left`);
-    }
-
-    this.containerRef.current.scrollTop = newOffset;
-
-    await wait(SCROLL_THROTTLE_MS * 2); // wait for state.offset to be changed by scroll
-
-    return this.scrollTo(item, retries - 1);
   };
 
   getRowsToRender = () => {
