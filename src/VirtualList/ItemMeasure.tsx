@@ -4,9 +4,11 @@ interface ItemMeasureChildrenProps {
   measureRef: React.Ref<HTMLDivElement>;
 }
 
+export type onResizeFn = (index: number, contentRect: DOMRectReadOnly) => void;
+
 interface ItemMeasureProps {
   index: number;
-  onResize: (index: number, contentRect: DOMRectReadOnly) => void;
+  onResize: onResizeFn;
   children: ({ measureRef }: ItemMeasureChildrenProps) => React.ReactElement;
 }
 

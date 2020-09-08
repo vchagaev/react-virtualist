@@ -2,11 +2,12 @@ import React, { CSSProperties, UIEvent } from "react";
 import throttle from "lodash-es/throttle";
 import debounce from "lodash-es/debounce";
 
-import { ItemMeasure } from "./ItemMeasure";
+import { ItemMeasure, onResizeFn } from './ItemMeasure'
 import { wait } from "../utils";
 import { traceDU } from "../ChatViewer/traceDU";
 import { Corrector } from "./Corrector";
-import { DebugInfoContainer } from './DebugInfoContainer'
+import { DebugInfoContainer } from "./DebugInfoContainer";
+import { Row } from "./Row";
 
 const DEFAULT_ESTIMATED_HEIGHT = 100;
 const SCROLL_THROTTLE_MS = 100;
@@ -35,12 +36,17 @@ const DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO = 1;
  *
  */
 
+export type GetItemKeyFn<Item> = (item: Item) => string;
+export type RenderRowFn<Item> = (
+  renderRowProps: RenderRowProps<Item>
+) => React.ReactNode;
+
 interface VirtualListProps<Item> {
   height: number;
   width: number;
-  getItemKey: (item: Item) => string;
+  getItemKey: GetItemKeyFn<Item>;
   approximateItemHeight: number;
-  renderRow: (renderRowProps: RenderRowProps<Item>) => React.ReactNode;
+  renderRow: RenderRowFn<Item>;
   reversed: boolean; // if the list is stick to the bottom
   items: Item[];
   selectedItem: Item;
@@ -75,7 +81,7 @@ export interface OnScrollEvent<Item> {
   height: number;
 }
 
-interface CorrectedItemMetadata {
+export interface CorrectedItemMetadata {
   index: number;
   correctedOffset: number;
   correctedHeight: number;
@@ -842,7 +848,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.forceUpdate();
   }, MEASURE_UPDATE_DEBOUNCE_MS);
 
-  onResize = (index: number, contentRect: DOMRectReadOnly) => {
+  onResize: onResizeFn = (index: number, contentRect: DOMRectReadOnly) => {
     const { items } = this.state;
 
     const item = items[index];
@@ -1017,7 +1023,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return this.scrollTo(item, retries - 1);
   };
 
-  getItemsToRender = () => {
+  getRowsToRender = () => {
     const { renderRow, getItemKey, debug } = this.props;
     const { items, startIndexToRender, stopIndexToRender } = this.state;
 
@@ -1028,39 +1034,16 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       const itemMetadata = this.getCorrectedItemMetadata(item, i);
 
       itemsToRender.push(
-        <ItemMeasure key={getItemKey(item)} onResize={this.onResize} index={i}>
-          {({ measureRef }) => {
-            const top = itemMetadata.correctedOffset;
-            const curHeight = itemMetadata.correctedHeight;
-            const style: CSSProperties = {
-              position: "absolute",
-              top,
-              height: curHeight,
-              opacity: itemMetadata.correctedMeasured ? 1 : 0,
-              width: "100%",
-            };
-
-            if (debug) {
-              style.backgroundColor =
-                this.anchorItem === item
-                  ? "pink"
-                  : itemMetadata.offsetDelta
-                  ? "yellow"
-                  : "transparent";
-              style.opacity = style.opacity === 0 ? 0.2 : 1;
-            }
-
-            return (
-              <div style={style}>
-                {renderRow({
-                  ref: measureRef,
-                  item,
-                  itemMetadata,
-                })}
-              </div>
-            );
-          }}
-        </ItemMeasure>
+        <Row
+          key={getItemKey(item)}
+          item={item}
+          anchorItem={this.anchorItem}
+          debug={debug}
+          index={i}
+          itemMetadata={itemMetadata}
+          renderRow={renderRow}
+          onResize={this.onResize}
+        />
       );
     }
 
@@ -1071,7 +1054,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { height, width, reversed, debug } = this.props;
     const { estimatedTotalHeight } = this.state;
 
-    const itemsToRender = this.getItemsToRender();
+    const itemsToRender = this.getRowsToRender();
 
     let curHeight = height;
     let curOverflow = "auto";
