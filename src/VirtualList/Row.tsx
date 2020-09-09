@@ -1,6 +1,6 @@
 import React, { CSSProperties } from "react";
 import { ItemMeasure, onResizeFn } from "./ItemMeasure";
-import { CorrectedItemMetadata, RenderRowFn } from "./VirtualList";
+import { CorrectedItemMetadata, RenderRowFn } from './types'
 
 interface RowProps<Item> {
   item: Item;

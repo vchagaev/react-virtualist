@@ -41,9 +41,6 @@ export class DebugInfoContainer<Item> extends React.Component<
           {instance.scroller.scrollingToIndex && instance.scroller.scrollingToIndex}
         </span>
         <span>isScrolling: {instance.isScrolling ? "true" : "false"}</span>
-        <span>
-          scrollingDirection: {instance.scrollingDirection ? "down" : "up"}
-        </span>
         <span>inited: {instance.inited ? "true" : "false"}</span>
         <span>totalHeight: {instance.state.estimatedTotalHeight}</span>
         <span>isAtTheTop: {instance.offset === 0 ? "true" : "false"}</span>

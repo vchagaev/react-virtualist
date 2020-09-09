@@ -7,122 +7,23 @@ import { Corrector } from "./Corrector";
 import { Row } from "./Row";
 import { Containers } from "./Containers";
 import { Scroller } from "./Scroller";
-
-const DEFAULT_ESTIMATED_HEIGHT = 100;
-const SCROLL_THROTTLE_MS = 100;
-const MEASURE_UPDATE_DEBOUNCE_MS = 50;
-const SCROLL_DEBOUNCE_MS = 700;
-const DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO = 1;
-
-// TODO: Layout (offsets) Manager as a module
-// TODO: support heuristic function getEstimatedHeight(item, width) for better layouting
-// TODO: logging system
-// TODO: tests
-
-/**
- * VirtualList can virtualize huge lists with dynamic height.
- * It anchors to the top element in the current view. It uses ResizeObserver for detecting changes in heights.
- * Inspired by react-window.
- *
- * There are some caveats except described in related issues. Items from props may be applied with delay.
- * They are applied only when scroll is idle. This is the limitation of the correction technique that is used here.
- * This technique relies on consistent indexes to calculate corrected offsets.
- * scrollTo - is async function because we measure items on the fly.
- *
- * Related issues and discussions:
- * - https://github.com/bvaughn/react-window/issues/6
- * - https://github.com/bvaughn/react-virtualized/issues/610#issuecomment-324890558
- *
- */
-
-export type GetItemKeyFn<Item> = (item: Item) => string;
-export type RenderRowFn<Item> = (
-  renderRowProps: RenderRowProps<Item>
-) => React.ReactNode;
-
-interface VirtualListProps<Item> {
-  height: number;
-  width: number;
-  getItemKey: GetItemKeyFn<Item>;
-  approximateItemHeight: number;
-  renderRow: RenderRowFn<Item>;
-  reversed: boolean; // if the list is stick to the bottom
-  items: Item[];
-  selectedItem: Item;
-  offscreenRatio: number;
-  debug: boolean;
-  onScroll?: (params: OnScrollEvent<Item>) => void; // fire on scroll only on meaningful scrolls
-}
-
-interface VirtualListState<Item> {
-  startIndexToRender: number;
-  stopIndexToRender: number;
-  items: Item[];
-  estimatedTotalHeight: number;
-}
-
-export interface OnScrollEvent<Item> {
-  items: Item[];
-  calculatedMiddleIndexToRender: number;
-}
-
-export interface CorrectedItemMetadata {
-  index: number;
-  correctedOffset: number;
-  correctedHeight: number;
-  correctedMeasured: boolean;
-  originalMeasured: boolean;
-  originalOffset: number;
-  originalHeight: number;
-  offsetDelta: number;
-  heightDelta: number | null;
-}
-
-export interface RenderRowProps<Item> {
-  item: Item;
-  ref: React.Ref<HTMLDivElement>;
-  itemMetadata: CorrectedItemMetadata;
-}
-
-type ItemMetadata = {
-  height: number;
-  offset: number;
-  measured: boolean;
-};
-
-interface BuildOffsetsOptions<Item> {
-  items: Item[];
-  height: number;
-  offset: number;
-  lastPositionedIndex: number;
-  anchorIndex: number | null;
-  indexMustBeCalculated: number;
-  offscreenRatio: number;
-}
-
-interface GetInfoAboutNewItemsParams<Item extends Object> {
-  prevItems: Item[];
-  newItems: Item[];
-  anchorItem: Item | null;
-  lastPositionedIndex: number;
-}
-
-interface StopIndexParams<Item extends Object> {
-  items: Item[];
-  startIndex: number;
-  anchorIndex: number | null;
-  offset: number;
-  height: number;
-  indexMustBeCalculated: number;
-  offscreenRatio: number;
-}
-
-interface EstimatedTotalHeightParams<Item extends Object> {
-  lastPositionedItem: Item;
-  lastPositionedIndex: number;
-  itemsCount: number;
-  approximateItemHeight: number;
-}
+import { findNearestItemBinarySearch } from "./findNearestBinarySearch";
+import {
+  BuildOffsetsOptions,
+  CorrectedItemMetadata,
+  EstimatedTotalHeightParams,
+  GetInfoAboutNewItemsParams,
+  ItemMetadata,
+  StopIndexParams,
+  VirtualListProps,
+  VirtualListState,
+} from "./types";
+import {
+  DEFAULT_ESTIMATED_HEIGHT,
+  DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO, MEASURE_UPDATE_DEBOUNCE_MS,
+  SCROLL_DEBOUNCE_MS,
+  SCROLL_THROTTLE_MS
+} from './constants'
 
 export class VirtualList<Item extends Object> extends React.PureComponent<
   VirtualListProps<Item>,
@@ -399,35 +300,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     this.forceUpdate();
   };
 
-  findNearestItemBinarySearch = (
-    items: Item[],
-    offset: number,
-    lastPositionedIndex: number
-  ) => {
-    let low = 0;
-    let high = lastPositionedIndex;
-
-    while (low <= high) {
-      const middle = low + Math.floor((high - low) / 2);
-      const currentOffset = this.getCorrectedItemMetadata(items[middle], middle)
-        .correctedOffset;
-
-      if (currentOffset === offset) {
-        return middle;
-      } else if (currentOffset < offset) {
-        low = middle + 1;
-      } else if (currentOffset > offset) {
-        high = middle - 1;
-      }
-    }
-
-    if (low > 0) {
-      return low - 1;
-    } else {
-      return 0;
-    }
-  };
-
   getStartIndex = (
     items: Item[],
     offset: number,
@@ -435,10 +307,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     height: number,
     offsetRatio: number
   ) => {
-    const nearestIndex = this.findNearestItemBinarySearch(
+    const nearestIndex = findNearestItemBinarySearch(
       items,
       offset - height * offsetRatio, // for better virtualization
-      lastPositionedIndex
+      lastPositionedIndex,
+      this.getCorrectedItemMetadata
     );
 
     return {

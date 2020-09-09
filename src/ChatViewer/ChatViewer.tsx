@@ -3,13 +3,12 @@ import { Skeleton } from "antd";
 import AutoSizer from "react-virtualized-auto-sizer";
 
 import {
-  OnScrollEvent,
-  RenderRowProps,
   VirtualList,
 } from "../VirtualList/VirtualList";
 import { Message, MessageProps } from "./Message";
+import { OnScrollEvent, RenderRowProps } from '../VirtualList/types'
 
-const DEBUG_MODE = false;
+const DEBUG_MODE = true;
 
 /**
  * ChatViewer is responsible for detecting the need for more items if they exist. Only for each direction at the time.

@@ -1,5 +1,5 @@
-import { CorrectedItemMetadata, GetItemKeyFn } from "./VirtualList";
 import { wait } from "../utils";
+import { CorrectedItemMetadata, GetItemKeyFn } from './types'
 
 interface ScrollToItemParams<Item> {
   item: Item;
