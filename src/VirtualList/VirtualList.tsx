@@ -3,27 +3,26 @@ import debounce from "lodash-es/debounce";
 
 import { onResizeFn } from "./ItemMeasure";
 import { traceDU } from "../ChatViewer/traceDU";
-import { Corrector } from "./Corrector";
 import { Row } from "./Row";
 import { Containers } from "./Containers";
 import { Scroller } from "./Scroller";
 import { findNearestItemBinarySearch } from "./findNearestBinarySearch";
 import {
   BuildOffsetsOptions,
-  CorrectedItemMetadata,
   EstimatedTotalHeightParams,
   GetInfoAboutNewItemsParams,
-  ItemMetadata,
   StopIndexParams,
   VirtualListProps,
   VirtualListState,
 } from "./types";
 import {
   DEFAULT_ESTIMATED_HEIGHT,
-  DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO, MEASURE_UPDATE_DEBOUNCE_MS,
+  DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO,
+  MEASURE_UPDATE_DEBOUNCE_MS,
   SCROLL_DEBOUNCE_MS,
-  SCROLL_THROTTLE_MS
-} from './constants'
+  SCROLL_THROTTLE_MS,
+} from "./constants";
+import { ItemsMetadataManager } from "./ItemsMetadataManager";
 
 export class VirtualList<Item extends Object> extends React.PureComponent<
   VirtualListProps<Item>,
@@ -44,10 +43,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     estimatedTotalHeight: 0,
   };
 
-  itemKeyToMetadata: Map<string, ItemMetadata> = new Map<
-    string,
-    ItemMetadata
-  >();
   offset: number = 0; // scrollTop of the container
   anchorItem: Item | null = null;
   anchorIndex: number | null = null;
@@ -55,8 +50,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   // for this index and all indexes below we know offsets. Also we know heights but some of them might be not measured yet
   lastPositionedIndex: number = 0;
   isScrolling: boolean = false;
-  corrector: Corrector = new Corrector();
   inited: boolean = false;
+  itemsMetadataManager = new ItemsMetadataManager<Item>(
+    this.props.getItemKey,
+    this.props.approximateItemHeight
+  );
 
   forceUpdateAsync = (): Promise<void> =>
     new Promise((resolve) => {
@@ -74,82 +72,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     return Math.max(0, estimatedTotalHeight - height);
   };
 
-  ensureItemMetadata = (itemKey: string) => {
-    const { approximateItemHeight } = this.props;
-
-    if (!this.itemKeyToMetadata.has(itemKey)) {
-      const meta = {
-        height: approximateItemHeight,
-        offset: 0,
-        measured: false,
-      };
-      this.itemKeyToMetadata.set(itemKey, meta);
-
-      return {
-        meta,
-        created: true,
-      };
-    }
-
-    return {
-      meta: this.itemKeyToMetadata.get(itemKey)!,
-      created: false,
-    };
-  };
-
-  setItemMetadata = (item: Item, newMeta: Partial<ItemMetadata>) => {
-    const { getItemKey } = this.props;
-    const key = getItemKey(item);
-    this.ensureItemMetadata(key);
-
-    const meta = this.itemKeyToMetadata.get(key)!;
-
-    this.itemKeyToMetadata.set(key, { ...meta, ...newMeta });
-  };
-
-  getItemMetadata = (item: Item) => {
-    const { getItemKey } = this.props;
-    const key = getItemKey(item);
-    this.ensureItemMetadata(key);
-
-    return this.itemKeyToMetadata.get(key)!;
-  };
-
-  getCorrectedItemMetadata = (
-    item: Item,
-    index: number
-  ): CorrectedItemMetadata => {
-    const { getItemKey } = this.props;
-    const key = getItemKey(item);
-    this.ensureItemMetadata(key);
-
-    const {
-      height: originalHeight,
-      offset: originalOffset,
-      measured,
-    } = this.getItemMetadata(item);
-
-    const offsetDelta = this.corrector.getOffsetDelta(index);
-    const heightDelta = this.corrector.getHeightDelta(index);
-
-    return {
-      index,
-      correctedOffset: originalOffset + offsetDelta,
-      correctedHeight:
-        originalHeight + (heightDelta === null ? 0 : heightDelta),
-      correctedMeasured: measured || heightDelta !== null,
-      originalMeasured: measured,
-      originalOffset,
-      originalHeight,
-      offsetDelta,
-      heightDelta,
-    };
-  };
-
   scroller: Scroller<Item> = new Scroller<Item>(
     this.props.getItemKey,
     SCROLL_THROTTLE_MS * 2,
-    this.getCorrectedItemMetadata,
+    this.itemsMetadataManager.getCorrectedItemMetadata,
     this.forceUpdateAsync,
     this.getMaximumPossibleOffset
   );
@@ -179,7 +105,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       };
     }
 
-    const lastPositionedItemMetadata = this.getItemMetadata(lastPositionedItem);
+    const lastPositionedItemMetadata = this.itemsMetadataManager.getItemMetadata(
+      lastPositionedItem
+    );
 
     if (
       lastPositionedIndex >= items.length - 1 ||
@@ -311,7 +239,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       items,
       offset - height * offsetRatio, // for better virtualization
       lastPositionedIndex,
-      this.getCorrectedItemMetadata
+      this.itemsMetadataManager.getCorrectedItemMetadata
     );
 
     return {
@@ -331,7 +259,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     let newAnchorItem = null;
     let newAnchorIndex = null;
     const startItem = items[startIndex];
-    const itemMetadata = this.getCorrectedItemMetadata(startItem, startIndex);
+    const itemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
+      startItem,
+      startIndex
+    );
     const targetOffset = offset + height + height * offscreenRatio;
 
     // TRICKY: During calculation we calculate offsets with corrections but we set original offsets
@@ -352,8 +283,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     while (curOffsetCorrected < targetOffset && stopIndex < items.length - 1) {
       stopIndex++;
       const curItem = items[stopIndex];
-      this.setItemMetadata(curItem, { offset: curOffset });
-      const curItemMetadata = this.getCorrectedItemMetadata(curItem, stopIndex);
+      this.itemsMetadataManager.setItemMetadata(curItem, { offset: curOffset });
+      const curItemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
+        curItem,
+        stopIndex
+      );
 
       if (
         (curItemMetadata.correctedOffset + curItemMetadata.correctedHeight >=
@@ -374,8 +308,11 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     if (stopIndex < items.length - 1) {
       stopIndex++;
       const curItem = items[stopIndex];
-      this.setItemMetadata(curItem, { offset: curOffset });
-      const curItemMetadata = this.getCorrectedItemMetadata(curItem, stopIndex);
+      this.itemsMetadataManager.setItemMetadata(curItem, { offset: curOffset });
+      const curItemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
+        curItem,
+        stopIndex
+      );
       curOffset += curItemMetadata.originalHeight;
       curOffsetCorrected += curItemMetadata.correctedHeight;
     }
@@ -391,8 +328,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       while (stopIndex < calculateUntil && stopIndex < items.length - 1) {
         stopIndex++;
         const curItem = items[stopIndex];
-        this.setItemMetadata(curItem, { offset: curOffset });
-        const curItemMetadata = this.getCorrectedItemMetadata(
+        this.itemsMetadataManager.setItemMetadata(curItem, {
+          offset: curOffset,
+        });
+        const curItemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
           curItem,
           stopIndex
         );
@@ -470,7 +409,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       }
 
       // to keep positions after prepend we have to calculate newly added items heights
-      const { created, meta } = this.ensureItemMetadata(newItemKey);
+      const { created, meta } = this.itemsMetadataManager.ensureItemMetadata(
+        newItemKey
+      );
       if (created) {
         heightAddedBeforeAnchor += meta.height;
       }
@@ -544,32 +485,35 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const anchorItemBefore = this.anchorItem;
     let anchorOffsetBefore = null;
     if (anchorIndexBefore !== null && curItems[anchorIndexBefore]) {
-      anchorOffsetBefore = this.getCorrectedItemMetadata(
+      anchorOffsetBefore = this.itemsMetadataManager.getCorrectedItemMetadata(
         curItems[anchorIndexBefore],
         anchorIndexBefore
       ).correctedOffset;
     }
     let stopIndexOffsetBefore = 0;
     if (curItems[stopIndexToRender]) {
-      stopIndexOffsetBefore = this.getCorrectedItemMetadata(
+      stopIndexOffsetBefore = this.itemsMetadataManager.getCorrectedItemMetadata(
         curItems[stopIndexToRender],
         stopIndexToRender
       ).correctedOffset;
     }
 
-    if (this.canAdjustScrollTop() && this.corrector.isInitialized()) {
+    const corrector = this.itemsMetadataManager.corrector;
+    if (this.canAdjustScrollTop() && corrector.isInitialized()) {
       // if we used corrector and now can adjust scrollTop
-      this.lastPositionedIndex = this.corrector.lastCorrectedIndex;
-      const correctedHeightsMap = this.corrector.indexToHeightDeltaMap;
+      this.lastPositionedIndex = corrector.lastCorrectedIndex;
+      const correctedHeightsMap = corrector.indexToHeightDeltaMap;
       // apply measured heights during corrected phase
       correctedHeightsMap.forEach((correction, index) => {
-        const { height } = this.getItemMetadata(curItems[index]);
-        this.setItemMetadata(curItems[index], {
+        const { height } = this.itemsMetadataManager.getItemMetadata(
+          curItems[index]
+        );
+        this.itemsMetadataManager.setItemMetadata(curItems[index], {
           height: height + correction,
           measured: true,
         });
       });
-      this.corrector.clear();
+      corrector.clear();
     }
 
     let heightAddedBeforeAnchorWithNewItems = 0;
@@ -607,14 +551,14 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     let anchorOffsetAfter = null;
     if (this.anchorIndex !== null && curItems[this.anchorIndex]) {
-      anchorOffsetAfter = this.getCorrectedItemMetadata(
+      anchorOffsetAfter = this.itemsMetadataManager.getCorrectedItemMetadata(
         curItems[this.anchorIndex],
         this.anchorIndex
       ).correctedOffset;
     }
     let stopIndexOffsetAfter = 0;
     if (curItems[stopIndexToRender]) {
-      stopIndexOffsetAfter = this.getCorrectedItemMetadata(
+      stopIndexOffsetAfter = this.itemsMetadataManager.getCorrectedItemMetadata(
         curItems[stopIndexToRender],
         stopIndexToRender
       ).correctedOffset;
@@ -629,7 +573,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       // in case anchor was removed
       scrollTopAdjustment =
         heightAddedBeforeAnchorWithNewItems -
-        this.getItemMetadata(anchorItemBefore).height;
+        this.itemsMetadataManager.getItemMetadata(anchorItemBefore).height;
     } else if (
       anchorOffsetBefore !== null &&
       anchorOffsetAfter !== null &&
@@ -698,7 +642,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     const { items } = this.state;
 
     const item = items[index];
-    const { height: originalHeight } = this.getItemMetadata(item);
+    const {
+      height: originalHeight,
+    } = this.itemsMetadataManager.getItemMetadata(item);
     const newHeight = Math.round(contentRect.height);
 
     if (newHeight === originalHeight) {
@@ -711,22 +657,26 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       newHeight,
     });
 
+    const corrector = this.itemsMetadataManager.corrector;
     if (
       this.anchorIndex !== null &&
       index < this.anchorIndex &&
       !this.canAdjustScrollTop()
     ) {
       // there are changes in heights upper than our anchor and we can't adjust scrollTop at the moment
-      if (!this.corrector.isInitialized()) {
-        this.corrector.init(this.lastPositionedIndex, 0); // for this position there is no corrections
-        this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
-      } else if (index <= this.corrector.firstCorrectedIndex) {
-        this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
+      if (!corrector.isInitialized()) {
+        corrector.init(this.lastPositionedIndex, 0); // for this position there is no corrections
+        corrector.addNewHeightDelta(index, newHeight - originalHeight);
+      } else if (index <= corrector.firstCorrectedIndex) {
+        corrector.addNewHeightDelta(index, newHeight - originalHeight);
       }
-    } else if (this.corrector.indexToHeightDeltaMap.has(index)) {
-      this.corrector.addNewHeightDelta(index, newHeight - originalHeight);
+    } else if (corrector.indexToHeightDeltaMap.has(index)) {
+      corrector.addNewHeightDelta(index, newHeight - originalHeight);
     } else {
-      this.setItemMetadata(item, { height: newHeight, measured: true });
+      this.itemsMetadataManager.setItemMetadata(item, {
+        height: newHeight,
+        measured: true,
+      });
       this.lastPositionedIndex = Math.min(
         this.lastPositionedIndex,
         Math.max(index - 1, 0)
@@ -746,7 +696,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       return 0;
     }
 
-    const lastPositionedItemMetadata = this.getCorrectedItemMetadata(
+    const lastPositionedItemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
       lastPositionedItem,
       lastPositionedIndex
     );
@@ -776,7 +726,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     for (let i = startIndexToRender; i <= stopIndexToRender; i++) {
       const item = items[i];
-      const itemMetadata = this.getCorrectedItemMetadata(item, i);
+      const itemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
+        item,
+        i
+      );
 
       itemsToRender.push(
         <Row<Item>
