@@ -72,16 +72,6 @@ export interface GetInfoAboutNewItemsParams<Item extends Object> {
   lastPositionedIndex: number;
 }
 
-export interface StopIndexParams<Item extends Object> {
-  items: Item[];
-  startIndex: number;
-  anchorIndex: number | null;
-  offset: number;
-  height: number;
-  indexMustBeCalculated: number;
-  offscreenRatio: number;
-}
-
 export interface EstimatedTotalHeightParams<Item extends Object> {
   lastPositionedItem: Item;
   lastPositionedIndex: number;

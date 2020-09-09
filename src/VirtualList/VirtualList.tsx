@@ -11,7 +11,6 @@ import {
   BuildOffsetsOptions,
   EstimatedTotalHeightParams,
   GetInfoAboutNewItemsParams,
-  StopIndexParams,
   VirtualListProps,
   VirtualListState,
 } from "./types";
@@ -23,6 +22,7 @@ import {
   SCROLL_THROTTLE_MS,
 } from "./constants";
 import { ItemsMetadataManager } from "./ItemsMetadataManager";
+import { calculateStopIndexAndAnchor } from "./calculateStopIndexAndAnchor";
 
 export class VirtualList<Item extends Object> extends React.PureComponent<
   VirtualListProps<Item>,
@@ -127,7 +127,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         lastCalculatedIndex,
         newAnchorItem,
         newAnchorIndex,
-      } = this.calculateStopIndexAndAnchor({
+      } = calculateStopIndexAndAnchor({
         items,
         startIndex: newStartIndexToRender,
         anchorIndex,
@@ -135,6 +135,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
         height,
         indexMustBeCalculated,
         offscreenRatio,
+        getItemMetadata: this.itemsMetadataManager.getCorrectedItemMetadata,
+        setItemMetadata: this.itemsMetadataManager.setItemMetadata,
       });
       const newLastPositionedIndex = Math.max(
         lastPositionedIndex,
@@ -156,7 +158,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       lastCalculatedIndex,
       newAnchorItem,
       newAnchorIndex,
-    } = this.calculateStopIndexAndAnchor({
+    } = calculateStopIndexAndAnchor({
       items,
       startIndex: lastPositionedIndex,
       anchorIndex,
@@ -164,6 +166,8 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
       height,
       indexMustBeCalculated,
       offscreenRatio,
+      getItemMetadata: this.itemsMetadataManager.getCorrectedItemMetadata,
+      setItemMetadata: this.itemsMetadataManager.setItemMetadata,
     });
     const newLastPositionedIndex = Math.max(
       lastPositionedIndex,
@@ -244,107 +248,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     return {
       startIndexToRender: Math.max(0, nearestIndex - 1), // for a11y +1 item upper
-    };
-  };
-
-  calculateStopIndexAndAnchor = ({
-    items,
-    startIndex,
-    anchorIndex,
-    offset,
-    height,
-    indexMustBeCalculated,
-    offscreenRatio,
-  }: StopIndexParams<Item>) => {
-    let newAnchorItem = null;
-    let newAnchorIndex = null;
-    const startItem = items[startIndex];
-    const itemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
-      startItem,
-      startIndex
-    );
-    const targetOffset = offset + height + height * offscreenRatio;
-
-    // TRICKY: During calculation we calculate offsets with corrections but we set original offsets
-    let curOffsetCorrected =
-      itemMetadata.correctedOffset + itemMetadata.correctedHeight;
-    let curOffset = itemMetadata.originalOffset + itemMetadata.originalHeight;
-    let stopIndex = startIndex;
-
-    if (
-      (itemMetadata.correctedOffset + itemMetadata.correctedHeight >= offset ||
-        itemMetadata.correctedOffset >= offset) &&
-      itemMetadata.correctedMeasured
-    ) {
-      newAnchorItem = items[stopIndex];
-      newAnchorIndex = stopIndex;
-    }
-
-    while (curOffsetCorrected < targetOffset && stopIndex < items.length - 1) {
-      stopIndex++;
-      const curItem = items[stopIndex];
-      this.itemsMetadataManager.setItemMetadata(curItem, { offset: curOffset });
-      const curItemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
-        curItem,
-        stopIndex
-      );
-
-      if (
-        (curItemMetadata.correctedOffset + curItemMetadata.correctedHeight >=
-          offset ||
-          curItemMetadata.correctedOffset >= offset) &&
-        curItemMetadata.correctedMeasured &&
-        !newAnchorItem
-      ) {
-        newAnchorItem = curItem;
-        newAnchorIndex = stopIndex;
-      }
-
-      curOffset += curItemMetadata.originalHeight;
-      curOffsetCorrected += curItemMetadata.correctedHeight;
-    }
-
-    // for a11y +1 item
-    if (stopIndex < items.length - 1) {
-      stopIndex++;
-      const curItem = items[stopIndex];
-      this.itemsMetadataManager.setItemMetadata(curItem, { offset: curOffset });
-      const curItemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
-        curItem,
-        stopIndex
-      );
-      curOffset += curItemMetadata.originalHeight;
-      curOffsetCorrected += curItemMetadata.correctedHeight;
-    }
-
-    const stopIndexToRender = stopIndex;
-    let calculateUntil = indexMustBeCalculated;
-    if (anchorIndex !== null && anchorIndex > calculateUntil) {
-      calculateUntil = anchorIndex;
-    }
-
-    // we have to always calculate anchorIndex or indexMustBeCalculated
-    if (calculateUntil > stopIndex) {
-      while (stopIndex < calculateUntil && stopIndex < items.length - 1) {
-        stopIndex++;
-        const curItem = items[stopIndex];
-        this.itemsMetadataManager.setItemMetadata(curItem, {
-          offset: curOffset,
-        });
-        const curItemMetadata = this.itemsMetadataManager.getCorrectedItemMetadata(
-          curItem,
-          stopIndex
-        );
-        curOffset += curItemMetadata.originalHeight;
-        curOffsetCorrected += curItemMetadata.correctedHeight;
-      }
-    }
-
-    return {
-      stopIndexToRender,
-      lastCalculatedIndex: stopIndex,
-      newAnchorItem,
-      newAnchorIndex,
     };
   };
 
