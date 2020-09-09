@@ -14,7 +14,7 @@ const MEASURE_UPDATE_DEBOUNCE_MS = 50;
 const SCROLL_DEBOUNCE_MS = 700;
 const DEFAULT_OFFSCREEN_ITEMS_HEIGHT_RATIO = 1;
 
-// TODO: modularize
+// TODO: Layout (offsets) Manager as a module
 // TODO: support heuristic function getEstimatedHeight(item, width) for better layouting
 // TODO: logging system
 // TODO: tests
@@ -63,21 +63,7 @@ interface VirtualListState<Item> {
 
 export interface OnScrollEvent<Item> {
   items: Item[];
-  startIndexToRender: number;
-  stopIndexToRender: number;
   calculatedMiddleIndexToRender: number;
-  offset: number;
-  maxPossibleScrollTop: number;
-  anchorItem: Item | null;
-  anchorIndex: number | null;
-  lastPositionedIndex: number;
-  scrollingToIndex: number | null;
-  isScrolling: boolean;
-  scrollingDirection: ScrollingDirection;
-  totalHeight: number;
-  isAtTheBottom: boolean;
-  isAtTheTop: boolean;
-  height: number;
 }
 
 export interface CorrectedItemMetadata {
@@ -112,11 +98,6 @@ interface BuildOffsetsOptions<Item> {
   anchorIndex: number | null;
   indexMustBeCalculated: number;
   offscreenRatio: number;
-}
-
-enum ScrollingDirection {
-  up,
-  down,
 }
 
 interface GetInfoAboutNewItemsParams<Item extends Object> {
@@ -174,10 +155,7 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   lastPositionedIndex: number = 0;
   isScrolling: boolean = false;
   corrector: Corrector = new Corrector();
-  scrollingDirection: ScrollingDirection = ScrollingDirection.down;
   inited: boolean = false;
-  isAtTheTop: boolean = false;
-  isAtTheBottom: boolean = false;
 
   forceUpdateAsync = (): Promise<void> =>
     new Promise((resolve) => {
@@ -381,18 +359,12 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   };
 
   callOnScrollHandler = () => {
-    const { onScroll, height, items: newItems } = this.props;
+    const { onScroll, items: newItems } = this.props;
     const {
       items: prevItems,
       stopIndexToRender,
       startIndexToRender,
-      estimatedTotalHeight,
     } = this.state;
-
-    this.isAtTheTop = this.offset === 0 && this.anchorIndex === 0;
-    this.isAtTheBottom =
-      this.offset === this.getMaximumPossibleOffset() &&
-      this.lastPositionedIndex === newItems.length - 1;
 
     if (
       newItems === prevItems &&
@@ -402,24 +374,10 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
     ) {
       // don't call onScroll while scrolling to item or during initialization
       onScroll({
-        isAtTheTop: this.isAtTheTop,
-        isAtTheBottom: this.isAtTheBottom,
-        lastPositionedIndex: this.lastPositionedIndex,
-        scrollingDirection: this.scrollingDirection,
-        isScrolling: this.isScrolling,
-        startIndexToRender,
-        stopIndexToRender,
         calculatedMiddleIndexToRender:
           startIndexToRender +
           Math.round((stopIndexToRender - startIndexToRender) / 2),
         items: newItems,
-        anchorIndex: this.anchorIndex,
-        anchorItem: this.anchorItem,
-        height: height,
-        offset: this.offset,
-        maxPossibleScrollTop: this.getMaximumPossibleOffset(),
-        scrollingToIndex: this.scroller.scrollingToItem,
-        totalHeight: estimatedTotalHeight,
       });
     }
   };
@@ -433,10 +391,6 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
   }, SCROLL_DEBOUNCE_MS);
 
   onScroll = (normalizedScrollTop: number) => {
-    this.scrollingDirection =
-      normalizedScrollTop <= this.offset
-        ? ScrollingDirection.up
-        : ScrollingDirection.down;
     this.isScrolling = true;
     this.offset = normalizedScrollTop;
     this.callOnScrollHandler();
@@ -710,7 +664,9 @@ export class VirtualList<Item extends Object> extends React.PureComponent<
 
     let curItems: Item[] = prevItems;
     const indexMustBeCalculated =
-      this.scroller.scrollingToIndex === null ? 0 : this.scroller.scrollingToIndex;
+      this.scroller.scrollingToIndex === null
+        ? 0
+        : this.scroller.scrollingToIndex;
     const anchorIndexBefore = this.anchorIndex;
     const anchorItemBefore = this.anchorItem;
     let anchorOffsetBefore = null;
