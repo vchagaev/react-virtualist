@@ -8,7 +8,7 @@ import {
 import { Message, MessageProps } from "./Message";
 import { OnScrollEvent, RenderRowProps } from '../VirtualList/types'
 
-const DEBUG_MODE = true;
+const DEBUG_MODE = false;
 
 /**
  * ChatViewer is responsible for detecting the need for more items if they exist. Only for each direction at the time.
